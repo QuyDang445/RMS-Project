@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "167001878159",
+    "firebase_url": "https://srm-afd4a-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "srm-afd4a",
+    "storage_bucket": "srm-afd4a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:167001878159:android:952b4fac3d9501c8844afa",
+        "android_client_info": {
+          "package_name": "com.hashhire"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLRF8EhmpycokHa5yq0XSHmwPZ0bs1BHU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
