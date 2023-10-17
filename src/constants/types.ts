@@ -1,66 +1,44 @@
-import {TYPE_USER} from './enum';
-
-export interface ImageProps {
-	name: string;
-	height?: number;
-	width?: number;
-	uri: string;
-	type?: string;
-}
-
 export interface UserProps {
-	id: string;
-	name: string;
-	address: string[];
-	avatar: string;
-	phone: string;
-	tokenDevice: string;
-	type: TYPE_USER;
-	password: string;
-	isBlocked?: boolean;
-	CCCD?: {
-		id: string;
-		image: string;
-	};
-	isAccept?: boolean;
+  name: string;
+  phone: string;
+  mail: string;
+  login: LoginProps;
+  devices: DeviceUserProps[];
 }
 
-export interface EvaluateProps {
-	id: string;
-	id_service: string;
-	star: number;
-	images: string[];
-	user_id: string;
+export interface LoginProps {
+  username: string;
+  password: string;
 }
 
-export interface ServiceProps {
-	id: string;
-	type: string;
-	name: string;
-	image: string;
-	description: string;
-	idServicer: string;
-	servicer: UserProps;
-}
-export interface CategoryService {
-	id: string;
-	name: string;
-}
-export interface Category {
-	id: string;
-	name: string;
-	idCategoryService: string;
+export interface DeviceProps {
+  name: string;
+  hash: [number, number];
+  fee: number; // phí hàng ngày sẽ trả tiền điện;
+  price: number;
+  discount: number; // giảm giá theo %
 }
 
-export interface OrderProps {
-	id: string;
-	idService: ServiceProps;
-	time: number;
+export interface DeviceUserProps {
+  device: DeviceProps;
+  timeStart: Date;
 }
 
-export interface AddressProps {
-	id: string;
-	name: string;
-	phone: string;
-	address: string;
-}
+// sau cuối ngày thì sẽ tính toán thời gian chạy của các thiết bị của user và trả ra số coin cho user, và cộng vào số dư
+// sau đó reset thiết bị đào đó về thời gian mà nó đã tính toán xong, để hôm sau tính tiếp dựa theo thời gian đó.
+
+/*
+* 1. Phase 1:
+- Tạo tài khoản.
+- Mua thiết bị đào.
+- Tính coin đã đào được cho user sau mỗi ngày.
+- Nạp tiền vào app.
+
+
+* 2. Phase 2:
+
+
+
+
+
+*/

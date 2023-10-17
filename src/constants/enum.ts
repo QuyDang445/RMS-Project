@@ -1,45 +1,44 @@
 export enum FONT_FAMILY {
-	REGULAR = 'Signika-Regular',
-	SEMI_BOLD = 'Signika-SemiBold',
-	BOLD = 'Signika-Bold',
+  REGULAR = 'DMSans-Regular',
+  SEMI_BOLD = 'DMSans-Medium',
+  BOLD = 'DMSans-Bold',
+}
+
+export enum FONT {
+  LARGE_TITLE = 'LARGE_TITLE',
+  BODY = 'BODY',
+  TITLE_1 = 'TITLE_1',
+  TITLE_2 = 'TITLE_2',
+  TITLE_3 = 'TITLE_3',
+  TITLE_4 = 'TITLE_4',
+  TITLE_5 = 'TITLE_5',
+  TITLE_6 = 'TITLE_6',
+  TITLE_7 = 'TITLE_7',
+  TITLE_8 = 'TITLE_8',
+  TITLE_9 = 'TITLE_9',
+  TITLE_10 = 'TITLE_10',
+  CAPTION_1 = 'CAPTION_1',
+  CAPTION_2 = 'CAPTION_2',
+  CAPTION_3 = 'CAPTION_3',
+  CAPTION_4 = 'CAPTION_4',
+  CAPTION_5 = 'CAPTION_5',
+  CAPTION_6 = 'CAPTION_6',
+  CAPTION_7 = 'CAPTION_7',
+  CAPTION_8 = 'CAPTION_8',
+  CAPTION_9 = 'CAPTION_9',
+  CAPTION_10 = 'CAPTION_10',
 }
 
 export enum ASYNC_STORAGE_KEY {
-	FIRST_OPEN = 'FIRST_OPEN',
+  TOKEN_USER = 'TOKEN_USER',
+  FIRST_OPEN = 'FIRST_OPEN',
 }
 
-export enum EMIT_EVENT {
-	DATA_LOGIN = 'DATA_LOGIN',
-	CHECK_SCREEN_ORDER = 'CHECK_SCREEN_ORDER',
-	LOGOUT = 'LOGOUT',
-}
+export enum SEX {}
 
-export enum TYPE_USER {
-	USER = 'USER',
-	ADMIN = 'ADMIN',
-	SERVICER = 'SERVICER',
-}
+export enum EMIT_EVENT {}
 
-export enum TABLE {
-	USERS = 'USERS',
-	ADDRESS = 'ADDRESS',
-	ORDERS = 'ORDERS',
-	ADMIN = 'ADMIN',
-	CATEGORY_SERVICE = 'CATEGORY_SERVICE',
-	SERVICE = 'SERVICE',
-	CATEGORY = 'CATEGORY',
-}
-
-export enum TYPE_ORDER_SERVICE {
-	OrderPending = 'OrderPending',
-	OrderCanceled = 'OrderCanceled',
-	OrderInProcess = 'OrderInProcess',
-	OrderCompleted = 'OrderCompleted',
-}
-
-export enum TYPE_BLOCK_SERVICER {
-	ReportedManyTimes = 'ReportedManyTimes',
-	LatePaymentOfFees = 'LatePaymentOfFees',
-	Other = 'Other',
-	ThereIsUnusualSpamBehavior = 'ThereIsUnusualSpamBehavior',
+export enum LANGUAGE {
+  JA = 'ja',
+  EN = 'en',
 }
