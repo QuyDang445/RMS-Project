@@ -1,41 +1,45 @@
-import ImageResizer from '@bam.tech/react-native-image-resizer';
 import {launchImageLibrary} from 'react-native-image-picker';
-import storage from '@react-native-firebase/storage';
+import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {Alert, Linking} from 'react-native';
+import {IS_ANDROID} from '../constants/constants';
 
 export const chooseImage = async () => {
-	try {
-		const res = await launchImageLibrary({mediaType: 'photo', selectionLimit: 1});
-		if (res?.assets) {
-			return {
-				name: res.assets[0]?.fileName as string,
-				height: res?.assets[0]?.height as number,
-				width: res?.assets[0]?.width as number,
-				uri: res?.assets[0]?.uri as string,
-				type: 'image/jpg',
-			};
-		}
-	} catch (error) {}
-};
+  const result = await request(
+    IS_ANDROID
+      ? PERMISSIONS?.ANDROID?.READ_EXTERNAL_STORAGE
+      : PERMISSIONS?.IOS?.PHOTO_LIBRARY,
+  );
 
-export const getImageFromDevice = async (numberImage = 1) => {
-	try {
-		const assets = await launchImageLibrary({mediaType: 'photo', selectionLimit: numberImage || 1});
-		const asset = assets?.assets?.[0];
+  if (result === RESULTS.DENIED) {
+    return;
+  }
 
-		if (asset?.uri) {
-			const newImage = await ImageResizer.createResizedImage(asset.uri!, asset?.height || 500, asset?.width || 500, 'PNG', 1);
-			return {uri: newImage.uri, type: asset.type, name: newImage.name};
-		}
-	} catch (error) {}
-};
+  if (result === RESULTS.GRANTED) {
+    try {
+      const res = await launchImageLibrary({
+        mediaType: 'photo',
+        selectionLimit: 1,
+      });
 
-export const uploadImage = async (uri: string) => {
-	try {
-		const name = '' + new Date().valueOf();
-		const storageRef = storage().ref().child(name);
-		const response = await fetch(uri);
-		const blob = await response.blob();
-		await storageRef.put(blob);
-		return (await storageRef.getDownloadURL()) as string;
-	} catch (error) {}
+      if (res?.assets) {
+        return {
+          name: res.assets[0]?.fileName as string,
+          height: res?.assets[0]?.height as number,
+          width: res?.assets[0]?.width as number,
+          uri: res?.assets[0]?.uri as string,
+          type: 'image/jpg',
+        };
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    Alert.alert('', 'Xin quyền vào thư viện!', [
+      {
+        text: 'OK',
+        onPress: () => Linking.openSettings(),
+      },
+      {text: 'CANCEL'},
+    ]);
+  }
 };
