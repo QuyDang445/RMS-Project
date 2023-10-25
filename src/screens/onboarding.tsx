@@ -1,13 +1,17 @@
-import {StyleSheet, Text, View} from 'react-native';
-import React, {memo} from 'react';
+import React, {memo, useEffect} from 'react';
+import {StyleSheet} from 'react-native';
 import FixedContainer from '../components/fixed-container';
+import {ROUTE_KEY} from '../navigator/routers';
+import {RootStackScreenProps} from '../navigator/stacks';
 
-const Onboarding = () => {
-	return (
-		<FixedContainer>
-			<Text>shdfv</Text>
-		</FixedContainer>
-	);
+const Onboarding = (props: RootStackScreenProps<'Onboarding'>) => {
+	const {navigation} = props;
+
+	useEffect(() => {
+		navigation.navigate(ROUTE_KEY.Login);
+	}, []);
+
+	return <FixedContainer></FixedContainer>;
 };
 
 export default memo(Onboarding);
