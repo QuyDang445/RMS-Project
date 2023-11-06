@@ -35,4 +35,5 @@ export const ROUTE_KEY = createEnum({
 	Payment: 'Payment',
 	EditPaymentFee: 'EditPaymentFee',
 	AddPayment: 'AddPayment',
+	EvaluateService: 'EvaluateService',
 });

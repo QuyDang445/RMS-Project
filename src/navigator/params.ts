@@ -9,7 +9,7 @@ export type RootStackScreensParams = {
 	SignUp: undefined;
 	SignUpServices: undefined;
 	ForgotPass: undefined;
-	Otp: {confirm: FirebaseAuthTypes.ConfirmationResult; userPhone: UserProps};
+	Otp: {confirm: FirebaseAuthTypes.PhoneAuthSnapshot; userPhone: UserProps};
 
 	Home: undefined;
 	Notification: undefined;
@@ -19,8 +19,8 @@ export type RootStackScreensParams = {
 	Search: {data: ServiceProps[]; categories: Category[]};
 	DetailService: {data: ServiceProps};
 	Booking: {service: ServiceProps};
-	InfoServicer: undefined;
-	AllReview: undefined;
+	InfoServicer: {idServicer: string};
+	AllReview: {idService: string};
 	DetailNotification: undefined;
 	ChangePassword: undefined;
 	Setting: undefined;
@@ -41,4 +41,5 @@ export type RootStackScreensParams = {
 	Payment: undefined;
 	EditPaymentFee: undefined;
 	AddPayment: undefined;
+	EvaluateService: {data: OrderProps};
 };

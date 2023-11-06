@@ -99,6 +99,11 @@ const OrderServicer = (props: RootStackScreenProps<'Order'>) => {
 						</TouchableOpacity>
 					);
 				}}
+				ListEmptyComponent={
+					<View style={{marginTop: heightScale(50)}}>
+						<CustomText style={{textAlign: 'center'}} color={colors.grayText} text={'Bạn không có dịch vụ nào'} />
+					</View>
+				}
 				data={data}
 			/>
 		</FixedContainer>

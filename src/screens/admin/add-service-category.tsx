@@ -12,7 +12,7 @@ import {RootStackScreenProps} from '../../navigator/stacks';
 import API from '../../services/api';
 import {heightScale, widthScale} from '../../styles/scaling-utils';
 import {generateRandomId, showMessage} from '../../utils';
-import {getImageFromDevice} from '../../utils/image';
+import {getImageFromDevice, uploadImage} from '../../utils/image';
 import Logger from '../../utils/logger';
 
 const AddServiceCategory = (props: RootStackScreenProps<'AddServiceCategory'>) => {
@@ -26,7 +26,7 @@ const AddServiceCategory = (props: RootStackScreenProps<'AddServiceCategory'>) =
 
 	const [category, setCategory] = useState<CategoryService>(editCategory as any);
 	const [name, setName] = useState(categoryService?.name || '');
-	const [image, setImage] = useState<ImageProps>();
+	const [image, setImage] = useState<ImageProps>(categoryService?.uri ? {uri: categoryService?.uri} : undefined);
 
 	useEffect(() => {
 		(async () => {
@@ -43,17 +43,18 @@ const AddServiceCategory = (props: RootStackScreenProps<'AddServiceCategory'>) =
 	}, []);
 
 	const onPressHandleAdd = async () => {
+		Spinner.show();
+		const urlImage = image?.type ? await uploadImage(image?.uri) : image?.uri;
+
 		if (categoryService) {
-			Spinner.show();
-			API.put(`${TABLE.CATEGORY}/${categoryService.id}`, {idCategoryService: category?.id, name: name})
+			API.put(`${TABLE.CATEGORY}/${categoryService.id}`, {idCategoryService: category?.id, name: name, uri: urlImage})
 				.then(() => {
 					showMessage('Sửa dịch vụ thành công!');
 					navigation.goBack();
 				})
 				.finally(() => Spinner.hide());
 		} else {
-			Spinner.show();
-			API.post(`${TABLE.CATEGORY}`, {idCategoryService: category?.id, name: name})
+			API.post(`${TABLE.CATEGORY}`, {idCategoryService: category?.id, name: name, uri: urlImage})
 				.then(() => {
 					showMessage('Thêm dịch vụ thành công!');
 					navigation.goBack();
@@ -64,7 +65,7 @@ const AddServiceCategory = (props: RootStackScreenProps<'AddServiceCategory'>) =
 
 	return (
 		<FixedContainer>
-			<CustomHeader title="THÊM LOẠI DỊCH VỤ" />
+			<CustomHeader title={categoryService ? 'SỬA LOẠI DỊCH VỤ' : 'THÊM LOẠI DỊCH VỤ'} />
 
 			<ScrollView style={styles.view}>
 				<CustomText font={FONT_FAMILY.BOLD} text={'LOẠI DỊCH VỤ'} size={14} />
@@ -128,7 +129,11 @@ const AddServiceCategory = (props: RootStackScreenProps<'AddServiceCategory'>) =
 						alignItems: 'center',
 						marginRight: widthScale(15),
 					}}>
-					<Image style={{width: 25, height: 25}} source={ICONS.camera} />
+					{image ? (
+						<Image style={{width: '100%', height: '100%', resizeMode: 'contain'}} source={image} />
+					) : (
+						<Image style={{width: 25, height: 25}} source={ICONS.camera} />
+					)}
 				</TouchableOpacity>
 			</ScrollView>
 

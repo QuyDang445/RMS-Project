@@ -1,11 +1,13 @@
 import {NavigationContainer, NavigationContainerRef, NavigationState} from '@react-navigation/native';
-import React, {useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {Provider} from 'react-redux';
 import {PersistGate} from 'redux-persist/integration/react';
 import Spinner from './components/spinner';
 import {RootStackScreensParams} from './navigator/params';
 import Stacks from './navigator/stacks';
 import store, {persistor} from './stores/store/store';
+import notifee, {AndroidImportance} from '@notifee/react-native';
+import {CHANNEL_ID} from './constants/constants';
 
 const App = () => {
 	const navigationRef = useRef<NavigationContainerRef<RootStackScreensParams>>(null);
@@ -20,6 +22,15 @@ const App = () => {
 			console.log(`------> ${route?.name}`);
 		}
 	};
+
+	useEffect(() => {
+		notifee.createChannel({
+			id: CHANNEL_ID,
+			importance: AndroidImportance.HIGH,
+			name: CHANNEL_ID,
+			sound: CHANNEL_ID,
+		});
+	}, []);
 
 	return (
 		<Provider store={store}>

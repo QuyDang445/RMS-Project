@@ -2,7 +2,7 @@ import {Alert, Linking, PermissionsAndroid, ToastAndroid} from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import {PERMISSIONS, request} from 'react-native-permissions';
 import {TABLE, TYPE_ORDER_SERVICE, TYPE_USER} from '../constants/enum';
-import {EvaluateProps, ServiceProps, UserProps} from '../constants/types';
+import {EvaluateProps, OrderProps, ServiceProps, UserProps} from '../constants/types';
 import API from '../services/api';
 import {colors} from '../styles/colors';
 
@@ -192,5 +192,29 @@ export const getUserAll = async () => {
 			newData.push(data[i]);
 		}
 	}
+	return newData;
+};
+
+export const getOrderAllFromIDServicer = async (idServicer: string) => {
+	const newData = [];
+	const allOrder = (await API.get(`${TABLE.ORDERS}`, true)) as OrderProps[];
+
+	// get info servicer
+	for (let i = 0; i < allOrder.length; i++) {
+		allOrder[i].serviceObject = (await API.get(`${TABLE.SERVICE}/${allOrder[i].idService}`)) as ServiceProps;
+	}
+
+	// filter idServicer
+	for (let i = 0; i < allOrder.length; i++) {
+		if (allOrder[i].serviceObject.servicer === idServicer) {
+			newData.push(allOrder[i]);
+		}
+	}
+
+	// get info user
+	for (let i = 0; i < newData.length; i++) {
+		newData[i].userObject = (await API.get(`${TABLE.USERS}/${newData[i].idUser}`)) as UserProps;
+	}
+
 	return newData;
 };

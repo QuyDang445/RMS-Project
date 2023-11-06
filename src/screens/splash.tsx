@@ -23,6 +23,7 @@ const Splash = (props: RootStackScreenProps<'Splash'>) => {
 
 		const token = await messaging().getToken();
 		const newUser = await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...userCurrent, tokenDevice: token});
+		console.log('TOKEN FCM-->', token);
 
 		dispatch(updateUserInfo(newUser));
 	};

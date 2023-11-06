@@ -20,6 +20,7 @@ import ChangePasswordForgot from '../screens/change-password-forgot';
 import DetailNotification from '../screens/detail-notification';
 import DetailOrder from '../screens/detail-order';
 import DetailService from '../screens/detail-service';
+import EvaluateService from '../screens/evaluate-service';
 import ForgotPass from '../screens/forgot-pass';
 import InfoServicer from '../screens/info-servicer';
 import ListAddress from '../screens/list-address';
@@ -83,6 +84,7 @@ const Stacks = () => {
 			<Screen name={ROUTE_KEY.Payment} component={Payment} />
 			<Screen name={ROUTE_KEY.EditPaymentFee} component={EditPaymentFee} />
 			<Screen name={ROUTE_KEY.AddPayment} component={AddPayment} />
+			<Screen name={ROUTE_KEY.EvaluateService} component={EvaluateService} />
 		</Navigator>
 	);
 };

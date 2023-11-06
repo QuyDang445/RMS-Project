@@ -18,7 +18,7 @@ import {showMessage} from '../utils';
 const ForgotPass = (props: RootStackScreenProps<'ForgotPass'>) => {
 	const {navigation} = props;
 
-	const [phone, setPhone] = useState('');
+	const [phone, setPhone] = useState('0563569011');
 
 	const onPressSendOtp = async () => {
 		const phoneCheck = `+84${phone}`;
@@ -37,22 +37,29 @@ const ForgotPass = (props: RootStackScreenProps<'ForgotPass'>) => {
 			return showMessage('Không có thông tin số điện thoại!');
 		}
 
-		auth()
-			.signInWithPhoneNumber(phoneCheck)
-			.then(confirm => {
-				navigation.replace(ROUTE_KEY.Otp, {confirm, userPhone});
-			})
-			.catch(error => {
-				if (error?.code == 'auth/invalid-phone-number') {
-					showMessage('Số điện thoại không tồn tại!');
-				} else if (error?.code == 'auth/too-many-requests') {
-					showMessage('Bạn đã yêu cầu quá số lần quy định, vui lòng thử lại vào ngày mai!');
-				} else {
-					console.error(error);
-					showMessage('Đã có lỗi!');
-				}
-			})
-			.finally(() => Spinner.hide());
+		try {
+			Spinner.show();
+			const listener = auth().verifyPhoneNumber(phoneCheck);
+			listener.on(
+				'state_changed',
+				snapshot => {},
+				error => {
+					if (error?.code == 'auth/invalid-phone-number') {
+						showMessage('Số điện thoại không tồn tại!');
+					} else if (error?.code == 'auth/too-many-requests') {
+						showMessage('Bạn đã yêu cầu quá số lần quy định, vui lòng thử lại vào ngày mai!');
+					} else {
+						console.error(error);
+						showMessage('Đã có lỗi!');
+					}
+					Spinner.hide();
+				},
+				snapshot => {
+					navigation.navigate(ROUTE_KEY.Otp, {confirm: snapshot, userPhone: userPhone});
+					Spinner.hide();
+				},
+			);
+		} catch (error: any) {}
 	};
 
 	return (

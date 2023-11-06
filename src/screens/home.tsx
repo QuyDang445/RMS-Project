@@ -15,6 +15,8 @@ import API from '../services/api';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
 import {generateRandomId, getServiceAll} from '../utils';
+import messaging from '@react-native-firebase/messaging';
+import {sendNotificationToDevices} from '../utils/notification';
 
 const Home = (props: RootStackScreenProps<'Home'>) => {
 	const {navigation} = props;
@@ -28,7 +30,7 @@ const Home = (props: RootStackScreenProps<'Home'>) => {
 	const [categories, setCategories] = useState<Category[]>([]);
 	const [serviceAll, setServiceAll] = useState<ServiceProps[]>([]);
 
-	const onFocusSearch = () => {
+	const onFocusSearch = async () => {
 		navigation.navigate(ROUTE_KEY.Search, {data: allServiceRef.current, categories: categories});
 	};
 
@@ -84,10 +86,7 @@ const Home = (props: RootStackScreenProps<'Home'>) => {
 						backgroundColor: filterCategory?.id === item.id ? colors.grayLine : `${colors.grayLine}50`,
 					},
 				]}>
-				<Image
-					style={styles.imageCategory}
-					source={{uri: 'https://top10dongnai.com/wp-content/uploads/2019/12/Vi-t%C3%ADnh-%C4%90%E1%BB%93ng-Nai.jpg'}}
-				/>
+				{!!item?.uri && <Image style={styles.imageCategory} source={{uri: item?.uri}} />}
 				<CustomText style={{width: '100%', textAlign: 'center'}} size={10} text={item?.name} />
 			</TouchableOpacity>
 		);
@@ -101,8 +100,8 @@ const Home = (props: RootStackScreenProps<'Home'>) => {
 				<View style={{flex: 1, padding: widthScale(15)}}>
 					<CustomText numberOfLines={1} font={FONT_FAMILY.BOLD} text={item?.name} />
 					<Star star={item.star} />
-					{/* <CustomText text={item.servicerObject.name} /> */}
-					{/* <CustomText text={item.servicerObject.phone} /> */}
+					<CustomText text={item.servicerObject?.name} />
+					<CustomText text={item.servicerObject?.phone} />
 				</View>
 			</TouchableOpacity>
 		);
@@ -115,7 +114,7 @@ const Home = (props: RootStackScreenProps<'Home'>) => {
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
 				showsVerticalScrollIndicator={false}
 				style={styles.view}>
-				<TouchableOpacity disabled={refreshing} onPress={onFocusSearch} style={styles.viewInput}>
+				<TouchableOpacity disabled={refreshing || !serviceAll.length} onPress={onFocusSearch} style={styles.viewInput}>
 					<Image source={ICONS.search} style={styles.iconSearch} />
 					<TextInput editable={false} style={styles.input} />
 				</TouchableOpacity>

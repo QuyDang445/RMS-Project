@@ -1,33 +1,64 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {FlatList, Image, ScrollView, StyleSheet, View} from 'react-native';
 import CustomHeader from '../components/custom-header';
 import CustomText from '../components/custom-text';
 import FixedContainer from '../components/fixed-container';
+import LoadingScreen from '../components/loading-screen';
 import Star from '../components/star';
-import {FONT_FAMILY} from '../constants/enum';
+import {FONT_FAMILY, TABLE} from '../constants/enum';
+import {EvaluateProps, ServiceProps, UserProps} from '../constants/types';
 import {RootStackScreenProps} from '../navigator/stacks';
+import API from '../services/api';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
-import {generateRandomId} from '../utils';
+import {generateRandomId, getServiceFromID} from '../utils';
 
 const InfoServicer = (props: RootStackScreenProps<'InfoServicer'>) => {
-	const {navigation} = props;
+	const {navigation, route} = props;
+
+	const idServicer = route.params.idServicer;
+
+	const [loading, setLoading] = useState(false);
+
+	const [data, setData] = useState<UserProps>();
+
+	const [service, setService] = useState<ServiceProps[]>([]);
+
+	const [evaluate, setEvaluate] = useState<EvaluateProps[]>([]);
+
+	useEffect(() => {
+		getData();
+		getService();
+	}, []);
+
+	const getData = () => {
+		setLoading(true);
+		API.get(`${TABLE.USERS}/${idServicer}`)
+			.then(res => setData(res as any))
+			.finally(() => setLoading(false));
+	};
+
+	const getService = async () => {
+		const res = await getServiceFromID(idServicer);
+		setService(res);
+	};
+
+	if (loading) {
+		return <LoadingScreen />;
+	}
 
 	return (
 		<FixedContainer>
 			<CustomHeader title="THÔNG TIN THỢ" />
 			<ScrollView style={styles.view}>
-				<Image
-					style={styles.avatar}
-					source={{uri: 'https://hips.hearstapps.com/hmg-prod/images/index-avatar-1665421955.jpg?crop=0.502xw:1.00xh;0.250xw,0&resize=1200:*'}}
-				/>
-				<CustomText text={'Nguyen Van A'} style={{textAlign: 'center', marginVertical: heightScale(10)}} />
+				<Image style={styles.avatar} source={{uri: data?.avatar}} />
+				<CustomText text={data?.name} style={{textAlign: 'center', marginVertical: heightScale(10)}} />
 
 				<CustomText font={FONT_FAMILY.BOLD} text={'CÁC DỊCH VỤ CUNG CẤP'} style={{marginVertical: heightScale(20)}} />
 				<FlatList
 					horizontal
 					showsHorizontalScrollIndicator={false}
-					renderItem={() => (
+					renderItem={({item}) => (
 						<View
 							style={{
 								width: widthScale(150),
@@ -38,15 +69,15 @@ const InfoServicer = (props: RootStackScreenProps<'InfoServicer'>) => {
 							}}>
 							<Image
 								style={{width: widthScale(110), height: heightScale(80), alignSelf: 'center', marginTop: widthScale(20)}}
-								source={{uri: 'https://fptshop.com.vn/Uploads/images/sua-chua-dien-thoai-lay-lien.jpg'}}
+								source={{uri: item.image}}
 							/>
 							<View style={{flex: 1, padding: widthScale(10)}}>
-								<CustomText text={'Sửa điện thoại'} />
-								<CustomText text={'0123576768'} />
+								<CustomText text={item.name} />
+								<Star star={item?.star} />
 							</View>
 						</View>
 					)}
-					data={[1, 1, 1, 1, 1, 1, 1, 1]}
+					data={service}
 				/>
 
 				<CustomText font={FONT_FAMILY.BOLD} text={'ĐÁNH GIÁ'} style={{marginVertical: heightScale(20)}} />

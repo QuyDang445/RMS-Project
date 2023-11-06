@@ -34,12 +34,12 @@ const HomeServicer = (props: RootStackScreenProps<'Home'>) => {
 		[],
 	);
 
-	const render = (type: TYPE_ORDER_SERVICE) => <RenderListService navigation={navigation} type={type} />;
+	const render = useCallback((type: TYPE_ORDER_SERVICE) => <RenderListService navigation={navigation} type={type} />, []);
 
-	const OrderPending = () => render(TYPE_ORDER_SERVICE.OrderPending);
-	const OrderCanceled = () => render(TYPE_ORDER_SERVICE.OrderCanceled);
-	const OrderInProcess = () => render(TYPE_ORDER_SERVICE.OrderInProcess);
-	const OrderCompleted = () => render(TYPE_ORDER_SERVICE.OrderCompleted);
+	const OrderPending = useCallback(() => render(TYPE_ORDER_SERVICE.OrderPending), []);
+	const OrderCanceled = useCallback(() => render(TYPE_ORDER_SERVICE.OrderCanceled), []);
+	const OrderInProcess = useCallback(() => render(TYPE_ORDER_SERVICE.OrderInProcess), []);
+	const OrderCompleted = useCallback(() => render(TYPE_ORDER_SERVICE.OrderCompleted), []);
 
 	return (
 		<FixedContainer>

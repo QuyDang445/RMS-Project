@@ -33,7 +33,7 @@ export const getImageFromDevice = async (numberImage = 1) => {
 
 		if (asset?.uri) {
 			// const newImage = await ImageResizer.createResizedImage(asset.uri!, asset?.height || 500, asset?.width || 500, 'PNG', 1);
-			return {uri: asset.uri, type: asset.type} as ImageProps;
+			return {uri: asset.uri, type: asset.type, width: '100', height: '100', name: '100'} as any as ImageProps;
 		}
 	} catch (error) {}
 };

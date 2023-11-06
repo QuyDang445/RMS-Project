@@ -14,10 +14,10 @@ const API = {
 		try {
 			!isNoLogAPI && logAPI('GET', url);
 			const data = await API_AXIOS.get(url + '.json');
-			return isParseArray ? parseObjectToArray(data) : data;
+			return (isParseArray ? parseObjectToArray(data) : data) as any;
 		} catch (error) {
 			console.error(error);
-			return isParseArray ? [] : undefined;
+			return (isParseArray ? [] : undefined) as any;
 		}
 	},
 
@@ -25,10 +25,10 @@ const API = {
 		try {
 			!isNoLogAPI && logAPI('POST', url, data);
 			const res = await API_AXIOS.post(url + '.json', data);
-			return isParseArray ? parseObjectToArray(res) : res;
+			return (isParseArray ? parseObjectToArray(res) : res) as any;
 		} catch (error) {
 			console.error(error);
-			return isParseArray ? [] : undefined;
+			return (isParseArray ? [] : undefined) as any;
 		}
 	},
 
@@ -36,10 +36,10 @@ const API = {
 		try {
 			!isNoLogAPI && logAPI('PUT', url, data);
 			const res = await API_AXIOS.put(url + '.json', data);
-			return isParseArray ? parseObjectToArray(res) : res;
+			return (isParseArray ? parseObjectToArray(res) : res) as any;
 		} catch (error) {
 			console.error(error);
-			return isParseArray ? [] : undefined;
+			return (isParseArray ? [] : undefined) as any;
 		}
 	},
 };

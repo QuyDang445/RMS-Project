@@ -1,11 +1,12 @@
 import {BottomTabBarProps, createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {CommonActions} from '@react-navigation/native';
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {AppState, DeviceEventEmitter, Image, Keyboard, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {AppState, DeviceEventEmitter, Image, Keyboard, StyleSheet, ToastAndroid, TouchableOpacity, View} from 'react-native';
 import {ICONS} from '../assets/image-paths';
 import FixedContainer from '../components/fixed-container';
-import {WIDTH} from '../constants/constants';
-import {EMIT_EVENT, TYPE_USER} from '../constants/enum';
+import {CHANNEL_ID, WIDTH} from '../constants/constants';
+import {EMIT_EVENT, TABLE, TYPE_USER} from '../constants/enum';
+import {UserProps} from '../constants/types';
 import OrderAdmin from '../screens/admin/order-admin';
 import userAdmin from '../screens/admin/user-admin';
 import Home from '../screens/home';
@@ -15,6 +16,7 @@ import Notification from '../screens/notification';
 import Order from '../screens/order';
 import OrderServicer from '../screens/order-servicer';
 import User from '../screens/user';
+import API from '../services/api';
 import {clearUserData} from '../stores/reducers/userReducer';
 import {useAppDispatch, useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
@@ -22,6 +24,11 @@ import {heightScale, widthScale} from '../styles/scaling-utils';
 import {RootStackScreensParams} from './params';
 import {ROUTE_KEY} from './routers';
 import {RootStackScreenProps} from './stacks';
+import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
+import messaging from '@react-native-firebase/messaging';
+import Logger from '../utils/logger';
+import CustomText from '../components/custom-text';
+import {sendNotificationToDevices} from '../utils/notification';
 
 const Tab = createBottomTabNavigator<RootStackScreensParams>();
 
@@ -113,8 +120,28 @@ const BottomTab = (props: RootStackScreenProps<'BottomTab'>) => {
 		DeviceEventEmitter.addListener(EMIT_EVENT.LOGOUT, logout);
 	}, []);
 
-	const logout = () => {
+	useEffect(() => {
+		messaging().onMessage(message => {
+			notifee.displayNotification({
+				android: {importance: AndroidImportance.HIGH, channelId: CHANNEL_ID, sound: CHANNEL_ID},
+				title: message.notification?.title,
+				body: message?.notification?.body,
+				data: message.data,
+			});
+		});
+
+		notifee.onForegroundEvent(({type, detail}) => {
+			Logger('debug', detail);
+
+			if (type === EventType.PRESS) {
+			}
+		});
+	}, []);
+
+	const logout = async () => {
 		navigation.dispatch(CommonActions.reset({index: 0, routes: [{name: ROUTE_KEY.Login}]}));
+		await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...userInfo, tokenDevice: ''});
+
 		setTimeout(() => {
 			dispatch(clearUserData());
 		}, 600);

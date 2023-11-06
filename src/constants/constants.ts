@@ -15,3 +15,5 @@ export const IS_IOS = Platform.OS === 'ios';
 
 export const baseWidth = 375;
 export const baseHeight = 812;
+
+export const CHANNEL_ID = 'SRM_MAIN';

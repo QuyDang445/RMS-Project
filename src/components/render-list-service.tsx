@@ -1,11 +1,17 @@
+import {useFocusEffect} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import React, {memo, useState} from 'react';
+import moment from 'moment';
+import React, {memo, useCallback, useEffect, useState} from 'react';
 import {FlatList, Image, StyleSheet, TouchableOpacity, View} from 'react-native';
-import {FONT_FAMILY, TYPE_ORDER_SERVICE} from '../constants/enum';
+import {FONT_FAMILY, TABLE, TYPE_ORDER_SERVICE} from '../constants/enum';
+import {OrderProps, ServiceProps, UserProps} from '../constants/types';
 import {RootStackScreensParams} from '../navigator/params';
 import {ROUTE_KEY} from '../navigator/routers';
+import API from '../services/api';
+import {useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
+import {getOrderAllFromIDServicer} from '../utils';
 import CustomText from './custom-text';
 
 interface Props {
@@ -15,12 +21,34 @@ interface Props {
 const RenderListService = (props: Props) => {
 	const {navigation, type} = props;
 
+	const userInfo = useAppSelector(state => state.userInfoReducer.userInfo);
+
 	const [refreshing, setRefreshing] = useState(false);
-	const [data, setData] = useState([]);
+	const [data, setData] = useState<OrderProps[]>([]);
 
-	const onRefresh = async () => {};
+	useFocusEffect(
+		useCallback(() => {
+			onRefresh();
+		}, []),
+	);
 
-	const onPressDetail = () => navigation.navigate(ROUTE_KEY.DetailOrder);
+	const onRefresh = async () => {
+		setRefreshing(true);
+		const newData = await getOrderAllFromIDServicer(userInfo?.id!);
+
+		const _data = [];
+		for (let i = 0; i < newData.length; i++) {
+			if (newData[i].status === type) {
+				newData[i].servicerObject = userInfo!;
+				_data.push(newData[i]);
+			}
+		}
+
+		setData(_data);
+		setRefreshing(false);
+	};
+
+	const onPressDetail = (item: OrderProps) => navigation.navigate(ROUTE_KEY.DetailOrder, {data: item});
 
 	// xác nhận đơn
 	const onPressConfirm = () => {};
@@ -36,28 +64,22 @@ const RenderListService = (props: Props) => {
 			onRefresh={onRefresh}
 			refreshing={refreshing}
 			contentContainerStyle={styles.view}
-			data={[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]}
-			renderItem={() => (
-				<TouchableOpacity onPress={onPressDetail} style={{marginBottom: heightScale(20), flexDirection: 'row'}}>
-					<Image
-						style={styles.viewImage}
-						source={{uri: 'https://kenh14cdn.com/203336854389633024/2021/9/22/photo-1-16323151756351473238622.jpg'}}
-					/>
+			data={data}
+			renderItem={({item}) => (
+				<TouchableOpacity onPress={() => onPressDetail(item)} style={{marginBottom: heightScale(20), flexDirection: 'row'}}>
+					<Image style={styles.viewImage} source={{uri: item?.serviceObject?.image}} />
 					<View style={{marginLeft: widthScale(10), flex: 1}}>
-						<CustomText font={FONT_FAMILY.BOLD} text={'Sua dien thoai'} />
-						<CustomText text={'Nguyễn Thị B'} />
-						<CustomText text={'18:00 17/08/2023'} />
-						<View style={{flexDirection: 'row', flex: 1, width: '100%'}}>
-							<TouchableOpacity onPress={onPressConfirm} style={styles.buttonItem}>
-								<CustomText color={colors.appColor} font={FONT_FAMILY.BOLD} text={'XÁC NHẬN'} />
-							</TouchableOpacity>
-							<TouchableOpacity onPress={onPressCancel} style={styles.buttonItem}>
-								<CustomText color={colors.red} font={FONT_FAMILY.BOLD} text={'HUỶ'} />
-							</TouchableOpacity>
-						</View>
+						<CustomText font={FONT_FAMILY.BOLD} text={item?.serviceObject?.name} />
+						<CustomText text={item?.userObject?.name} />
+						<CustomText text={moment(item?.time).format('hh:mm DD/MM/YYYY')} />
 					</View>
 				</TouchableOpacity>
 			)}
+			ListEmptyComponent={
+				<View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+					<CustomText color={colors.grayText} text={'Không có đơn đặt hàng!'} />
+				</View>
+			}
 		/>
 	);
 };
@@ -67,6 +89,7 @@ const styles = StyleSheet.create({
 	view: {
 		padding: widthScale(20),
 		backgroundColor: colors.white,
+		flex: 1,
 	},
 	viewImage: {
 		width: widthScale(150),

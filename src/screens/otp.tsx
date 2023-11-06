@@ -8,6 +8,7 @@ import Spinner from '../components/spinner';
 import {ROUTE_KEY} from '../navigator/routers';
 import {RootStackScreenProps} from '../navigator/stacks';
 import {widthScale} from '../styles/scaling-utils';
+import auth, {FirebaseAuthTypes} from '@react-native-firebase/auth';
 
 const Otp = (props: RootStackScreenProps<'Otp'>) => {
 	const {navigation, route} = props;
@@ -17,15 +18,28 @@ const Otp = (props: RootStackScreenProps<'Otp'>) => {
 
 	const [code, setCode] = useState('');
 
-	const handleOtp = () => {
-		Spinner.show();
-		confirm
-			.confirm(code)
-			.then(() => {
-				navigation.replace(ROUTE_KEY.ChangePasswordForgot, {userPhone});
-			})
-			.catch(() => Alert.alert('Sai mã xác thực'))
-			.finally(() => Spinner.hide());
+	const handleOtp = async () => {
+		try {
+			Spinner.show();
+			if (code === confirm.code) {
+				const credential = auth.PhoneAuthProvider.credential(confirm.verificationId, code);
+				const userData = await auth().signInWithCredential(credential);
+				const token = userData ? (await userData?.user?.getIdTokenResult()).token : '';
+
+				if (token) {
+					navigation.replace(ROUTE_KEY.ChangePasswordForgot, {userPhone});
+				} else {
+					throw new Error('__');
+				}
+				Spinner.hide();
+			} else {
+				throw new Error('__');
+			}
+		} catch (error) {
+			Alert.alert('Sai mã xác thực');
+			console.error(error);
+			Spinner.hide();
+		}
 	};
 
 	return (

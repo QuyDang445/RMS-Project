@@ -22,8 +22,8 @@ const Login = (props: RootStackScreenProps<'Login'>) => {
 	const {navigation} = props;
 	const dispatch = useAppDispatch();
 
-	const [phone, setPhone] = useState(__DEV__ ? '08525868755998' : '');
-	const [password, setPassword] = useState(__DEV__ ? 'Uu' : '');
+	const [phone, setPhone] = useState(__DEV__ ? '' : '');
+	const [password, setPassword] = useState(__DEV__ ? '' : '');
 
 	useEffect(() => {
 		DeviceEventEmitter.addListener(EMIT_EVENT.DATA_LOGIN, ({phone: newPhone, password: newPassword}) => {

@@ -4,18 +4,23 @@ import {FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, To
 import {ICONS} from '../assets/image-paths';
 import CustomButton from '../components/custom-button';
 import CustomHeader from '../components/custom-header';
+import CustomRadioButton from '../components/custom-radio-button';
 import CustomText from '../components/custom-text';
 import FixedContainer from '../components/fixed-container';
 import LoadingScreen from '../components/loading-screen';
 import Spinner from '../components/spinner';
 import {WIDTH} from '../constants/constants';
 import {FONT_FAMILY, TABLE, TYPE_ORDER_SERVICE, TYPE_USER} from '../constants/enum';
+import {ImageProps, OrderProps} from '../constants/types';
+import {ROUTE_KEY} from '../navigator/routers';
 import {RootStackScreenProps} from '../navigator/stacks';
 import API from '../services/api';
 import {useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
 import {AlertYesNo, generateRandomId, getColorStatusOrder, getStatusOrder, showMessage} from '../utils';
+import {getImageFromDevice, uploadImage} from '../utils/image';
+import Logger from '../utils/logger';
 import {pushNotificationToServiceCancelOrder} from '../utils/notification';
 
 const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
@@ -24,13 +29,14 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 	const userInfo = useAppSelector(state => state.userInfoReducer.userInfo);
 
 	const [data, setData] = useState(route.params.data);
-
 	const [visibleCancel, setVisibleCancel] = useState(false);
-
 	const [modalConfirmDone, setModalConfirmDone] = useState(false);
-	const [loading, setLoading] = useState(false);
+	const [modalReport, setModalReport] = useState(false);
+	const [reasonReport, setReasonReport] = useState('');
 
+	const [loading, setLoading] = useState(false);
 	const [reasonCancel, setReasonCancel] = useState('');
+	const [imageDone, setImageDone] = useState<ImageProps[]>([]);
 
 	const getDataCategory = () => API.get(`${TABLE.CATEGORY}/${data.serviceObject.category}`) as any;
 
@@ -65,7 +71,6 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 									status: TYPE_ORDER_SERVICE.OrderCanceled,
 									statusCancel: reasonCancel,
 								}).then(() => {
-									pushNotificationToServiceCancelOrder(data.idService, userInfo.id, data.id);
 									showMessage('Huỷ đơn hàng thành công!');
 									navigation.goBack();
 								});
@@ -78,8 +83,81 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 				break;
 
 			case TYPE_USER.SERVICER:
+				AlertYesNo(undefined, 'Bạn chắc chắn muốn huỷ?', async () => {
+					Spinner.show();
+					API.get(`${TABLE.ORDERS}/${data.id}`)
+						.then(async (newData: any) => {
+							if (newData?.status === TYPE_ORDER_SERVICE.OrderPending) {
+								await API.put(`${TABLE.ORDERS}/${data.id}`, {
+									...newData,
+									status: TYPE_ORDER_SERVICE.OrderCanceled,
+									statusCancel: reasonCancel,
+								}).then(() => {
+									showMessage('Huỷ đơn hàng thành công!');
+									navigation.goBack();
+								});
+							} else {
+								showMessage('Không thể huỷ!');
+							}
+						})
+						.finally(() => Spinner.hide());
+				});
+
 				break;
 		}
+	};
+
+	const handleConfirm = async () => {
+		AlertYesNo(undefined, 'Xác nhận?', async () => {
+			Spinner.show();
+			API.get(`${TABLE.ORDERS}/${data.id}`)
+				.then(async (newData: any) => {
+					if (newData?.status !== TYPE_ORDER_SERVICE.OrderCanceled) {
+						await API.put(`${TABLE.ORDERS}/${data.id}`, {...newData, status: TYPE_ORDER_SERVICE.OrderInProcess}).then(() => {
+							showMessage('Xác nhận thành công!');
+						});
+					} else {
+						showMessage('Đơn hàng đã bị huỷ!');
+					}
+				})
+				.finally(() => Spinner.hide())
+				.finally(() => navigation.goBack());
+		});
+	};
+
+	const handleDone = () => {
+		AlertYesNo(undefined, 'Xác nhận?', async () => {
+			Spinner.show();
+			API.get(`${TABLE.ORDERS}/${data.id}`)
+				.then(async (newData: any) => {
+					if (newData?.status !== TYPE_ORDER_SERVICE.OrderCanceled) {
+						const imageDoneUp = [];
+
+						for (let i = 0; i < imageDone.length; i++) {
+							const url = await uploadImage(imageDone[i].uri);
+							imageDoneUp.push(url);
+						}
+
+						await API.put(`${TABLE.ORDERS}/${data.id}`, {
+							...newData,
+							status: TYPE_ORDER_SERVICE.OrderCompleted,
+							imageDone: imageDoneUp,
+						}).then(() => {
+							showMessage('Hoàn thành!');
+						});
+					} else {
+						showMessage('Đơn hàng đã bị huỷ!');
+					}
+				})
+				.finally(() => Spinner.hide())
+				.finally(() => navigation.goBack());
+		});
+	};
+
+	const handleReport = (reasonReport: string) => {};
+
+	const handleEvaluate = () => {
+		navigation.navigate(ROUTE_KEY.EvaluateService, {data: data});
 	};
 
 	if (loading) {
@@ -99,7 +177,7 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 				</View>
 
 				<View style={{marginVertical: heightScale(20), flexDirection: 'row'}}>
-					<Image source={{uri: data.servicerObject.avatar}} style={{width: widthScale(50), height: widthScale(50), borderRadius: 100}} />
+					<Image source={{uri: data.servicerObject?.avatar}} style={{width: widthScale(50), height: widthScale(50), borderRadius: 100}} />
 					<View style={{flex: 1, marginLeft: widthScale(10)}}>
 						<CustomText text={data.servicerObject?.name} font={FONT_FAMILY.BOLD} />
 						<CustomText text={data.servicerObject.phone} />
@@ -116,9 +194,9 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 				</View>
 
 				{data.status === TYPE_ORDER_SERVICE.OrderCanceled && (
-					<View style={styles.viewInfo}>
+					<View style={[styles.viewInfo, {justifyContent: 'space-between'}]}>
 						<CustomText font={FONT_FAMILY.BOLD} text={'LÍ DO'} />
-						<CustomText style={{width: widthScale(260)}} color="red" text={`${data?.statusCancel}${data?.statusCancel}${data?.statusCancel}`} />
+						<CustomText style={{maxWidth: widthScale(260)}} color="red" text={data?.statusCancel} />
 					</View>
 				)}
 
@@ -154,19 +232,52 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 					))}
 				</ScrollView>
 
-				{/* SERVICER */}
-				{userInfo?.type === TYPE_USER.SERVICER && (
-					<View style={{flexDirection: 'row', padding: 20, justifyContent: 'space-between'}}>
-						<CustomButton onPress={() => setVisibleCancel(true)} text="HUỶ" style={{width: WIDTH / 2.8}} />
-						<CustomButton text="XÁC NHẬN" style={{width: WIDTH / 2.8}} />
+				{!!data?.imageDone?.length && (
+					<View style={{marginTop: heightScale(15)}}>
+						<CustomText font={FONT_FAMILY.BOLD} text={'KẾT QUẢ'} />
+						<ScrollView horizontal>
+							{data?.imageDone?.map(item => (
+								<Image key={generateRandomId()} style={styles.imageReview} source={{uri: item}} />
+							))}
+						</ScrollView>
 					</View>
 				)}
 
+				{/* SERVICER */}
+				{userInfo?.type === TYPE_USER.SERVICER && (
+					<>
+						{data.status === TYPE_ORDER_SERVICE.OrderPending ? (
+							<View style={{flexDirection: 'row', padding: 20, justifyContent: 'space-between'}}>
+								<CustomButton onPress={() => setVisibleCancel(true)} text="HUỶ" style={{width: WIDTH / 2.8}} />
+								<CustomButton onPress={handleConfirm} text="XÁC NHẬN" style={{width: WIDTH / 2.8}} />
+							</View>
+						) : (
+							<>
+								{data.status === TYPE_ORDER_SERVICE.OrderInProcess && (
+									<View style={{alignItems: 'center', width: '100%', marginTop: heightScale(20)}}>
+										<CustomButton onPress={() => setModalConfirmDone(true)} text="HOÀN THÀNH" style={{width: WIDTH / 2.8}} />
+									</View>
+								)}
+							</>
+						)}
+					</>
+				)}
+
 				{/* USER */}
-				{userInfo?.type === TYPE_USER.USER && data.status !== TYPE_ORDER_SERVICE.OrderCanceled && (
-					<View style={{alignItems: 'center', width: '100%', marginTop: heightScale(20)}}>
-						<CustomButton onPress={() => setVisibleCancel(true)} text="HUỶ" style={{width: WIDTH / 3}} />
-					</View>
+				{userInfo?.type === TYPE_USER.USER && (
+					<>
+						{data.status === TYPE_ORDER_SERVICE.OrderPending && (
+							<View style={{alignItems: 'center', width: '100%', marginTop: heightScale(20)}}>
+								<CustomButton onPress={() => setVisibleCancel(true)} text="HUỶ" style={{width: WIDTH / 3}} />
+							</View>
+						)}
+						{data.status === TYPE_ORDER_SERVICE.OrderCompleted && !data?.isEvaluate && (
+							<View style={{flexDirection: 'row', padding: 20, justifyContent: 'space-between'}}>
+								<CustomButton onPress={() => setModalReport(true)} text="BÁO CÁO" style={{width: WIDTH / 2.8}} />
+								<CustomButton onPress={handleEvaluate} text="ĐÁNH GIÁ" style={{width: WIDTH / 2.8}} />
+							</View>
+						)}
+					</>
 				)}
 			</ScrollView>
 
@@ -217,6 +328,10 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 										if (index === 0) {
 											return (
 												<TouchableOpacity
+													onPress={async () => {
+														const image = await getImageFromDevice(10);
+														setImageDone([...imageDone, ...image]);
+													}}
 													style={{
 														width: widthScale(80),
 														height: widthScale(80),
@@ -229,18 +344,97 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 												</TouchableOpacity>
 											);
 										} else {
-											return <View style={{width: widthScale(80), height: widthScale(80), backgroundColor: 'red', borderRadius: 5}} />;
+											return (
+												<View>
+													<TouchableOpacity
+														onPress={() => {
+															const newImages = [...imageDone];
+															newImages.splice(index - 1, 1);
+															setImageDone(newImages);
+														}}
+														style={{
+															position: 'absolute',
+															zIndex: 10,
+															right: 0,
+															backgroundColor: colors.white,
+															borderRadius: 100,
+															width: widthScale(25),
+															height: widthScale(25),
+															justifyContent: 'center',
+															alignItems: 'center',
+														}}>
+														<Image
+															source={ICONS.delete}
+															style={{
+																width: widthScale(18),
+																height: widthScale(18),
+															}}
+														/>
+													</TouchableOpacity>
+													<Image style={{width: widthScale(80), height: widthScale(80), borderRadius: 5}} source={item} />
+												</View>
+											);
 										}
 									}}
 									numColumns={3}
 									columnWrapperStyle={{justifyContent: 'space-between', marginBottom: heightScale(10)}}
-									data={[1, 1, 1, 1, 1, 1, 1, 1, 1]}
+									data={[1, ...imageDone]}
 								/>
 							</View>
 						</ScrollView>
 						<View style={styles.viewButton}>
 							<CustomButton onPress={() => setModalConfirmDone(false)} text="HUỶ" style={{width: WIDTH / 3}} />
-							<CustomButton onPress={() => {}} text="XÁC NHẬN" style={{width: WIDTH / 3}} />
+							<CustomButton disabled={!imageDone?.length} onPress={handleDone} text="XÁC NHẬN" style={{width: WIDTH / 3}} />
+						</View>
+					</Pressable>
+				</Pressable>
+			</Modal>
+
+			{/* REPORT  */}
+			<Modal
+				statusBarTranslucent
+				transparent
+				onDismiss={() => setModalReport(false)}
+				onRequestClose={() => setModalReport(false)}
+				visible={modalReport}>
+				<Pressable onPress={() => setModalReport(false)} style={styles.viewModal}>
+					<Pressable style={styles.content}>
+						<ScrollView>
+							<CustomText font={FONT_FAMILY.BOLD} text={'BÁO CÁO'} style={{alignSelf: 'center'}} />
+							<View style={{padding: widthScale(20)}}>
+								<CustomRadioButton
+									text="Dịch vụ không đúng mô tả"
+									isChecked={reasonReport === 'Dịch vụ không đúng mô tả'}
+									onPress={() => setReasonReport('Dịch vụ không đúng mô tả')}
+								/>
+								<View style={{height: 10}} />
+								<CustomRadioButton text="Khác" isChecked={reasonReport !== 'Dịch vụ không đúng mô tả'} onPress={() => setReasonReport('')} />
+								<View style={{height: 10}} />
+
+								{reasonReport !== 'Dịch vụ không đúng mô tả' && (
+									<TextInput
+										onChangeText={setReasonReport}
+										value={reasonReport}
+										multiline
+										placeholder="Hãy nhập lí do"
+										style={{
+											width: '100%',
+											backgroundColor: `${colors.grayLine}40`,
+											maxHeight: heightScale(200),
+											borderRadius: 5,
+										}}
+									/>
+								)}
+							</View>
+						</ScrollView>
+						<View style={styles.viewButton1}>
+							<CustomButton onPress={() => setModalReport(false)} text="HUỶ" style={{width: WIDTH / 3}} />
+							<CustomButton
+								disabled={!reasonReport.trim()}
+								onPress={() => handleReport(reasonReport)}
+								text="XÁC NHẬN"
+								style={{width: WIDTH / 3}}
+							/>
 						</View>
 					</Pressable>
 				</Pressable>

@@ -7,6 +7,7 @@ import CustomText from '../../components/custom-text';
 import {EMIT_EVENT, FONT_FAMILY} from '../../constants/enum';
 import {widthScale, heightScale} from '../../styles/scaling-utils';
 import {ROUTE_KEY} from '../../navigator/routers';
+import {AlertYesNo} from '../../utils';
 
 const UserAdmin = (props: RootStackScreenProps<'User'>) => {
 	const {navigation} = props;
@@ -49,7 +50,7 @@ const UserAdmin = (props: RootStackScreenProps<'User'>) => {
 			</View>
 
 			<View style={styles.viewContent}>
-				<TouchableOpacity onPress={onPressLogout} style={styles.button}>
+				<TouchableOpacity onPress={() => AlertYesNo(undefined, 'Bạn chắc chắn muốn đăng xuất?', onPressLogout)} style={styles.button}>
 					<CustomText text={'Đăng xuất'} size={13} />
 				</TouchableOpacity>
 			</View>

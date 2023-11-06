@@ -136,7 +136,7 @@ const Category = memo(() => {
 				<Image source={ICONS.search} style={styles.iconSearch} />
 				<TextInput placeholder="Tìm kiếm" style={styles.input} />
 			</View>
-			{__DEV__ && <CustomText text={'Category'} />}
+
 			{data.map(item => (
 				<View style={styles.itemCategory} key={generateRandomId()}>
 					<CustomText font={FONT_FAMILY.BOLD} text={item.name} />
@@ -210,8 +210,6 @@ const ServiceCategory = memo(() => {
 			<View style={{marginVertical: heightScale(10)}}>
 				<CustomText font={FONT_FAMILY.BOLD} text={'LỌC'} />
 			</View>
-
-			{__DEV__ && <CustomText text={'ServiceCategory'} />}
 
 			{data.map(item => (
 				<View

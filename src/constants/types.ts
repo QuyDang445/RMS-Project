@@ -32,6 +32,8 @@ export interface EvaluateProps {
 	star: number;
 	images: string[];
 	user_id: string;
+	userObject?: UserProps;
+	content?: string;
 }
 
 export interface ServiceProps {
@@ -73,6 +75,8 @@ export interface OrderProps {
 	categoryObject: Category;
 	userObject: UserProps;
 	statusCancel: string;
+	imageDone: string[];
+	isEvaluate?: boolean;
 }
 
 export interface AddressProps {
