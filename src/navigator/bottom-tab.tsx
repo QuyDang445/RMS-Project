@@ -1,12 +1,13 @@
+import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
+import messaging from '@react-native-firebase/messaging';
 import {BottomTabBarProps, createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {CommonActions} from '@react-navigation/native';
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {AppState, DeviceEventEmitter, Image, Keyboard, StyleSheet, ToastAndroid, TouchableOpacity, View} from 'react-native';
+import {Alert, AppState, DeviceEventEmitter, Image, Keyboard, StyleSheet, TouchableOpacity, View} from 'react-native';
 import {ICONS} from '../assets/image-paths';
 import FixedContainer from '../components/fixed-container';
 import {CHANNEL_ID, WIDTH} from '../constants/constants';
 import {EMIT_EVENT, TABLE, TYPE_USER} from '../constants/enum';
-import {UserProps} from '../constants/types';
 import OrderAdmin from '../screens/admin/order-admin';
 import userAdmin from '../screens/admin/user-admin';
 import Home from '../screens/home';
@@ -21,14 +22,12 @@ import {clearUserData} from '../stores/reducers/userReducer';
 import {useAppDispatch, useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
+import Logger from '../utils/logger';
 import {RootStackScreensParams} from './params';
 import {ROUTE_KEY} from './routers';
 import {RootStackScreenProps} from './stacks';
-import notifee, {AndroidImportance, EventType} from '@notifee/react-native';
-import messaging from '@react-native-firebase/messaging';
-import Logger from '../utils/logger';
-import CustomText from '../components/custom-text';
-import {sendNotificationToDevices} from '../utils/notification';
+import database from '@react-native-firebase/database';
+import {UserProps} from '../constants/types';
 
 const Tab = createBottomTabNavigator<RootStackScreensParams>();
 
@@ -106,24 +105,37 @@ const BottomTab = (props: RootStackScreenProps<'BottomTab'>) => {
 	const renderTabBar = useCallback((props: BottomTabBarProps) => <CusTomTabBar {...props} />, []);
 
 	useEffect(() => {
+		let listenBlockAccount = database()
+			.ref(`/USERS/${userInfo?.id}`)
+			.on('value', snapshot => handleBlockUser(snapshot.val()));
+
 		const sub = AppState.addEventListener('change', async nextAppState => {
 			if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+				listenBlockAccount = database()
+					.ref(`/USERS/${userInfo?.id}`)
+					.on('value', snapshot => handleBlockUser(snapshot.val()));
+				console.log('\x1b[32;1m--> Socket - connected');
 			} else {
+				database().ref(`/USERS/${userInfo?.id}`).off('value', listenBlockAccount);
+				console.log('\x1b[31;1m--> Socket - disconnect');
 			}
 			appState.current = nextAppState;
 		});
 
-		return () => sub.remove();
+		return () => {
+			sub.remove();
+			database().ref(`/USERS/${userInfo?.id}`).off('value', listenBlockAccount);
+		};
 	}, []);
 
 	useEffect(() => {
 		DeviceEventEmitter.addListener(EMIT_EVENT.LOGOUT, logout);
-	}, []);
+	}, [userInfo]);
 
 	useEffect(() => {
 		messaging().onMessage(message => {
 			notifee.displayNotification({
-				android: {importance: AndroidImportance.HIGH, channelId: CHANNEL_ID, sound: CHANNEL_ID},
+				android: {importance: AndroidImportance.HIGH, channelId: CHANNEL_ID, sound: 'custom_sound'},
 				title: message.notification?.title,
 				body: message?.notification?.body,
 				data: message.data,
@@ -131,16 +143,23 @@ const BottomTab = (props: RootStackScreenProps<'BottomTab'>) => {
 		});
 
 		notifee.onForegroundEvent(({type, detail}) => {
-			Logger('debug', detail);
-
 			if (type === EventType.PRESS) {
 			}
 		});
 	}, []);
 
+	const handleBlockUser = (user: UserProps) => {
+		if (user?.isBlocked) {
+			Alert.alert('Thông báo!', 'Tài khoản của bạn đã bị chặn!', [{text: 'OK', onPress: logout}]);
+		}
+	};
+
 	const logout = async () => {
 		navigation.dispatch(CommonActions.reset({index: 0, routes: [{name: ROUTE_KEY.Login}]}));
-		await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...userInfo, tokenDevice: ''});
+
+		const infoUser = await API.get(`${TABLE.USERS}/${userInfo?.id}`);
+
+		await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...infoUser, tokenDevice: ''});
 
 		setTimeout(() => {
 			dispatch(clearUserData());
@@ -197,8 +216,6 @@ const styles = StyleSheet.create({
 		width: WIDTH,
 		height: heightScale(60),
 		backgroundColor: colors.white,
-		borderTopColor: colors.grayLine,
-		borderTopWidth: 1,
 	},
 	icon: {width: widthScale(25), height: widthScale(25)},
 	viewIcon: {

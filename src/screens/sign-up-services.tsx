@@ -11,12 +11,14 @@ import FixedContainer from '../components/fixed-container';
 import ModalChooseProvince, {ModalObject} from '../components/sign-up/modal-choose-province';
 import Spinner from '../components/spinner';
 import {EMIT_EVENT, TABLE, TYPE_USER} from '../constants/enum';
+import {UserProps} from '../constants/types';
 import {RootStackScreenProps} from '../navigator/stacks';
 import API from '../services/api';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
 import {AlertYesNo, showMessage} from '../utils';
 import {getImageFromDevice, uploadImage} from '../utils/image';
+import {pushNotificationAdminNewServicer} from '../utils/notification';
 
 const SignUpServices = (props: RootStackScreenProps<'SignUpServices'>) => {
 	const {navigation} = props;
@@ -44,7 +46,14 @@ const SignUpServices = (props: RootStackScreenProps<'SignUpServices'>) => {
 		}
 	};
 
-	const handleRegister = (value: any) => {
+	const handleRegister = async (value: any) => {
+		const allUser = (await API.get(`${TABLE.USERS}`, true)) as UserProps[];
+		for (let i = 0; i < allUser.length; i++) {
+			if (allUser[i].phone === value.phone) {
+				return showMessage('Số điện thoại này đã được đăng ký');
+			}
+		}
+
 		AlertYesNo('', 'Bạn đã kiểm tra kĩ thông tin?', async () => {
 			Spinner.show();
 			const imageCccd = await uploadImage(value.image);
@@ -62,6 +71,7 @@ const SignUpServices = (props: RootStackScreenProps<'SignUpServices'>) => {
 			};
 			const res = await API.post(`${TABLE.USERS}`, body);
 			if (res) {
+				await pushNotificationAdminNewServicer(res.id);
 				showMessage('Đăng ký tài khoản thành công, vui lòng chờ đợi admin duyệt qua thông tin!');
 				DeviceEventEmitter.emit(EMIT_EVENT.DATA_LOGIN, {phone: value.phone, password: value.pass});
 				navigation.goBack();

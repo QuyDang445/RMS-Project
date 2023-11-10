@@ -24,6 +24,8 @@ export interface UserProps {
 	};
 	isAccept?: boolean;
 	dateRegister?: number;
+	receiveBooking?: boolean;
+	reasonBlock: string;
 }
 
 export interface EvaluateProps {
@@ -86,7 +88,37 @@ export interface AddressProps {
 	address: string;
 }
 
-export interface Notification {
-	status: NOTIFICATION_TYPE;
-	idUser: string;
+export interface Notification {}
+
+export interface ServicerBlockUser {
+	idServicer: string;
+	phone: string;
+	id: string;
+}
+
+export interface PaymentServicer {
+	idServicer: string;
+	image: string;
+	id: string;
+	date: number;
+	paymentTime: string; // '10-2023'
+	isAccept?: boolean;
+}
+
+export interface InfoPaymentAdmin {
+	id: string;
+	number: number;
+	nameBank: string;
+	name: string;
+	content: string;
+	image?: string;
+}
+
+export interface PaymentProps {
+	date: number;
+	id: string;
+	idServicer: string;
+	image: string;
+	servicerObject?: UserProps;
+	isAccept?: boolean;
 }

@@ -19,7 +19,7 @@ import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
 import {AlertYesNo, generateRandomId, getLocationMyDevice, showMessage} from '../utils';
 import {getImageFromDevice, uploadImage} from '../utils/image';
-import {pushNotificationToServiceNewOrder} from '../utils/notification';
+import {pushNotificationServiceNewBooking, pushNotificationUserBookingSuccess} from '../utils/notification';
 
 const Booking = (props: RootStackScreenProps<'Booking'>) => {
 	const {navigation, route} = props;
@@ -83,9 +83,10 @@ const Booking = (props: RootStackScreenProps<'Booking'>) => {
 			};
 
 			API.post(`${TABLE.ORDERS}`, body)
-				.then((res: any) => {
+				.then(async (res: any) => {
+					await pushNotificationUserBookingSuccess(userInfo?.id!, service.id, res?.id);
+					await pushNotificationServiceNewBooking(userInfo?.id!, service.id, res?.id, service.servicer);
 					showMessage('Tạo đơn đặt hàng thành công!');
-					pushNotificationToServiceNewOrder(service.id, userInfo?.id!, res?.name!);
 					navigation.goBack();
 				})
 				.finally(() => Spinner.hide());

@@ -1,26 +1,122 @@
-import React, {memo, useState} from 'react';
-import {FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from 'react-native';
+import moment from 'moment';
+import React, {memo, useEffect, useState} from 'react';
+import {ActivityIndicator, FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from 'react-native';
 import CustomButton from '../../components/custom-button';
 import CustomHeader from '../../components/custom-header';
 import CustomRadioButton from '../../components/custom-radio-button';
 import CustomText from '../../components/custom-text';
 import FixedContainer from '../../components/fixed-container';
+import Spinner from '../../components/spinner';
 import Star from '../../components/star';
 import {WIDTH} from '../../constants/constants';
-import {FONT_FAMILY, TYPE_BLOCK_SERVICER} from '../../constants/enum';
+import {FONT_FAMILY, TABLE, TYPE_BLOCK_SERVICER} from '../../constants/enum';
+import {PaymentServicer, ServiceProps, UserProps} from '../../constants/types';
 import {RootStackScreenProps} from '../../navigator/stacks';
+import API from '../../services/api';
 import {colors} from '../../styles/colors';
 import {heightScale, widthScale} from '../../styles/scaling-utils';
-import {generateRandomId} from '../../utils';
+import {generateRandomId, getServiceFromID, showMessage} from '../../utils';
 
 const InfoDetailServicer = (props: RootStackScreenProps<'InfoDetailServicer'>) => {
-	const {navigation} = props;
+	const {navigation, route} = props;
+	const data = route.params.data;
 
 	const [visibleBlock, setVisibleBlock] = useState(false);
-
+	const [load, setLoad] = useState(false);
+	const [status, setStatus] = useState('');
 	const [reason, setReason] = useState<TYPE_BLOCK_SERVICER>();
+	const [service, setService] = useState<ServiceProps[]>([]);
+	const [loadService, setLoadService] = useState(false);
 
-	const handleBlock = () => {};
+	useEffect(() => {
+		getStatusPayment();
+		getService();
+	}, []);
+
+	const getService = () => {
+		setLoadService(true);
+		getServiceFromID(data.id)
+			.then(res => setService(res))
+			.finally(() => setLoadService(false));
+	};
+
+	const getColor = () => {
+		switch (status) {
+			case 'Chưa thanh toán':
+				return colors.red;
+			case 'Đã thanh toán':
+				return colors.green;
+			case 'Chờ sét duyệt':
+				return colors.appColor;
+		}
+	};
+	const getStatusPayment = () => {
+		setLoad(true);
+		API.get(`${TABLE.PAYMENT_FEE_SERVICE}/${data?.id}`, true)
+			.then(async (res: PaymentServicer[]) => {
+				const payment = (await findClosestDateObject(res)) as PaymentServicer;
+				if (payment) {
+					const monthCurrent = new Date().getMonth() + 1;
+
+					if (monthCurrent > new Date(payment.date).getMonth() + 1) {
+						setStatus('Chưa thanh toán');
+					} else {
+						if (payment.isAccept) {
+							setStatus('Đã thanh toán');
+						} else {
+							setStatus('Chờ sét duyệt');
+						}
+					}
+				} else {
+					setStatus('Chưa thanh toán');
+				}
+			})
+			.catch(() => setStatus('Chưa thanh toán'))
+			.finally(() => setLoad(false));
+	};
+	const findClosestDateObject = (data: PaymentServicer[]) => {
+		return new Promise((resolve, reject) => {
+			!data.length && reject(undefined);
+			const currentDate = new Date().getTime();
+			let closestItem = data?.[0];
+			let closestDifference = Math.abs(currentDate - data[0]?.date);
+
+			for (let i = 1; i < data.length; i++) {
+				const difference = Math.abs(currentDate - data[i].date);
+				if (difference < closestDifference) {
+					closestItem = data[i];
+					closestDifference = difference;
+				}
+			}
+
+			resolve(closestItem as PaymentServicer | undefined);
+		});
+	};
+
+	const handleBlock = async () => {
+		if (!reason) {
+			return showMessage('Vui lòng nhập lí do!');
+		}
+
+		Spinner.show();
+		const newData = await API.get(`${TABLE.USERS}/${data.id}`);
+		API.put(`${TABLE.USERS}/${data.id}`, {...newData, isBlocked: true, reasonBlock: reason} as UserProps)
+			.then(() => {
+				showMessage('Đã chặn ' + data.name);
+				navigation.goBack();
+			})
+			.finally(() => Spinner.hide());
+	};
+	const handleUnBlock = async () => {
+		Spinner.show();
+		const newData = await API.get(`${TABLE.USERS}/${data.id}`);
+		API.put(`${TABLE.USERS}/${data.id}`, {...newData, isBlocked: false, reasonBlock: ''} as UserProps)
+			.then(() => {
+				showMessage('Đã mở khoá cho ' + data.name);
+				navigation.goBack();
+			})
+			.finally(() => Spinner.hide());
+	};
 
 	return (
 		<FixedContainer>
@@ -28,7 +124,7 @@ const InfoDetailServicer = (props: RootStackScreenProps<'InfoDetailServicer'>) =
 			<ScrollView style={styles.view}>
 				<Image
 					style={{width: widthScale(100), height: heightScale(100), borderRadius: 100, alignSelf: 'center', marginVertical: heightScale(20)}}
-					source={{uri: 'https://kenh14cdn.com/thumb_w/660/203336854389633024/2023/4/20/img1142-16819573106021266882586.jpg'}}
+					source={{uri: data.avatar}}
 				/>
 
 				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
@@ -36,21 +132,16 @@ const InfoDetailServicer = (props: RootStackScreenProps<'InfoDetailServicer'>) =
 						text={'TÌNH TRẠNG:   '}
 						font={FONT_FAMILY.BOLD}
 						size={14}
-						rightContent={<CustomText font={FONT_FAMILY.BOLD} color={colors.red} text={'Quá hạn'} size={15} />}
+						rightContent={load ? <ActivityIndicator /> : <CustomText font={FONT_FAMILY.BOLD} color={getColor()} text={status} size={15} />}
 					/>
 				</View>
 
 				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
-					<CustomText text={'HỌ VÀ TÊN:   '} font={FONT_FAMILY.BOLD} size={14} rightContent={<CustomText text={'Nguyen Van A'} size={15} />} />
+					<CustomText text={'HỌ VÀ TÊN:   '} font={FONT_FAMILY.BOLD} size={14} rightContent={<CustomText text={data.name} size={15} />} />
 				</View>
 
 				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
-					<CustomText
-						text={'SỐ ĐIỆN THOẠI:   '}
-						font={FONT_FAMILY.BOLD}
-						size={14}
-						rightContent={<CustomText text={'Nguyen Van A'} size={15} />}
-					/>
+					<CustomText text={'SỐ ĐIỆN THOẠI:   '} font={FONT_FAMILY.BOLD} size={14} rightContent={<CustomText text={data.phone} size={15} />} />
 				</View>
 
 				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
@@ -58,33 +149,42 @@ const InfoDetailServicer = (props: RootStackScreenProps<'InfoDetailServicer'>) =
 						text={'NGÀY ĐĂNG KÝ:   '}
 						font={FONT_FAMILY.BOLD}
 						size={14}
-						rightContent={<CustomText text={'Nguyen Van A'} size={15} />}
+						rightContent={<CustomText text={moment(data.dateRegister).format('DD/MM/YYYY')} size={15} />}
 					/>
 				</View>
 
 				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
 					<CustomText text={'ẢNH CCCD:   '} font={FONT_FAMILY.BOLD} size={14} />
-					<Image
-						style={{width: widthScale(120), height: heightScale(80)}}
-						source={{uri: 'https://kenh14cdn.com/thumb_w/660/203336854389633024/2023/4/20/img1142-16819573106021266882586.jpg'}}
-					/>
+					<Image style={{width: widthScale(120), height: heightScale(80)}} source={{uri: data.CCCD?.image}} />
 				</View>
 
 				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
-					<CustomText text={'CCCD:   '} font={FONT_FAMILY.BOLD} size={14} rightContent={<CustomText text={'Nguyen Van A'} size={15} />} />
+					<CustomText text={'CCCD:   '} font={FONT_FAMILY.BOLD} size={14} rightContent={<CustomText text={data.CCCD?.id} size={15} />} />
 				</View>
 
-				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
+				{/* <View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
 					<CustomText text={'ĐỊA CHỈ:   '} font={FONT_FAMILY.BOLD} size={14} rightContent={<CustomText text={'Nguyen Van A'} size={15} />} />
-				</View>
+				</View> */}
 
 				<View style={{marginVertical: heightScale(20)}}>
 					<CustomText size={14} text={'DANH SÁCH DỊCH VỤ'} font={FONT_FAMILY.BOLD} />
 
 					<FlatList
+						ListEmptyComponent={
+							<View
+								style={{
+									height: heightScale(120),
+									justifyContent: 'center',
+									alignItems: 'center',
+									alignSelf: 'center',
+									width: WIDTH - widthScale(40),
+								}}>
+								{loadService ? <ActivityIndicator /> : <CustomText color={colors.grayText} text={'Không có dịch vụ'} />}
+							</View>
+						}
 						showsHorizontalScrollIndicator={false}
 						horizontal
-						renderItem={() => (
+						renderItem={({item}) => (
 							<TouchableOpacity
 								style={{
 									marginVertical: heightScale(5),
@@ -92,20 +192,27 @@ const InfoDetailServicer = (props: RootStackScreenProps<'InfoDetailServicer'>) =
 									paddingVertical: heightScale(10),
 								}}
 								key={generateRandomId()}>
-								<Image style={styles.avatarComment} source={{uri: 'https://assets.stickpng.com/images/585e4bcdcb11b227491c3396.png'}} />
-								<CustomText text={'Sửa tủ lạnh'} font={FONT_FAMILY.BOLD} />
-								<CustomText text={'Điện'} />
-								<Star star={4} />
+								<Image style={styles.avatarComment} source={{uri: item.image}} />
+								<CustomText text={item?.name} font={FONT_FAMILY.BOLD} />
+								<CustomText text={item.categoryObject.name} />
+								<Star star={item.star} />
 							</TouchableOpacity>
 						)}
-						data={[1, 1, 1, 1, 1, 1]}
+						data={service}
 					/>
 				</View>
 
 				<View style={{flexDirection: 'row', justifyContent: 'center', paddingVertical: heightScale(10)}}>
-					<CustomButton style={{width: WIDTH / 2.5}} text="ĐÃ ĐÓNG PHÍ" onPress={() => {}} />
-					<View style={{width: widthScale(15)}} />
-					<CustomButton style={{width: WIDTH / 2.5, backgroundColor: 'red'}} text="KHOÁ TÀI KHOẢN" onPress={() => setVisibleBlock(true)} />
+					{data.isBlocked ? (
+						<CustomButton backgroundColor={colors.appColor} style={{width: WIDTH / 1.5}} text="MỞ KHOÁ TÀI KHOẢN" onPress={handleUnBlock} />
+					) : (
+						<CustomButton
+							backgroundColor="red"
+							style={{width: WIDTH / 2.5, backgroundColor: 'red'}}
+							text="KHOÁ TÀI KHOẢN"
+							onPress={() => setVisibleBlock(true)}
+						/>
+					)}
 				</View>
 			</ScrollView>
 
@@ -133,16 +240,16 @@ const InfoDetailServicer = (props: RootStackScreenProps<'InfoDetailServicer'>) =
 										text="Trễ thanh toán phí"
 									/>
 									<CustomRadioButton
-										onPress={() => setReason(TYPE_BLOCK_SERVICER.Other)}
-										isChecked={reason === TYPE_BLOCK_SERVICER.Other}
+										onPress={() => setReason('' as any)}
+										isChecked={reason !== TYPE_BLOCK_SERVICER.ReportedManyTimes && reason !== TYPE_BLOCK_SERVICER.LatePaymentOfFees}
 										text="Khác"
 									/>
 
-									{reason === TYPE_BLOCK_SERVICER.Other && (
+									{(!reason || (reason !== TYPE_BLOCK_SERVICER.ReportedManyTimes && reason !== TYPE_BLOCK_SERVICER.LatePaymentOfFees)) && (
 										<View>
 											<CustomText font={FONT_FAMILY.BOLD} text={'NHẬP LÝ DO'} size={14} />
 											<View style={styles.viewInput}>
-												<TextInput multiline />
+												<TextInput multiline value={reason} onChangeText={setReason as any} />
 											</View>
 										</View>
 									)}
@@ -175,7 +282,6 @@ const styles = StyleSheet.create({
 		width: widthScale(120),
 		height: widthScale(80),
 		borderRadius: 5,
-		backgroundColor: 'red',
 	},
 	viewModal: {
 		width: '100%',

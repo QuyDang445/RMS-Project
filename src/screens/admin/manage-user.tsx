@@ -1,5 +1,5 @@
 import {Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View} from 'react-native';
-import React, {memo, useEffect, useState} from 'react';
+import React, {memo, useCallback, useEffect, useState} from 'react';
 import FixedContainer from '../../components/fixed-container';
 import CustomHeader from '../../components/custom-header';
 import {RootStackScreenProps} from '../../navigator/stacks';
@@ -12,6 +12,7 @@ import {heightScale, widthScale} from '../../styles/scaling-utils';
 import {generateRandomId, getUserAll} from '../../utils';
 import {UserProps} from '../../constants/types';
 import moment from 'moment';
+import {useFocusEffect} from '@react-navigation/native';
 
 const ManageUser = (props: RootStackScreenProps<'ManageUser'>) => {
 	const {navigation} = props;
@@ -19,27 +20,26 @@ const ManageUser = (props: RootStackScreenProps<'ManageUser'>) => {
 	const [data, setData] = useState<UserProps[]>([]);
 	const [refreshing, setRefreshing] = useState(false);
 
+	useFocusEffect(
+		useCallback(() => {
+			onRefresh();
+		}, []),
+	);
 	const onRefresh = async () => {
 		setRefreshing(true);
 		const newData = await getUserAll();
-
 		setData(newData);
-
 		setRefreshing(false);
 	};
-
-	useEffect(() => {
-		onRefresh();
-	}, []);
 
 	return (
 		<FixedContainer>
 			<CustomHeader title="DANH SÁCH NGƯỜI DÙNG" />
 			<ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />} style={styles.view}>
-				<View style={styles.viewInput}>
+				{/* <View style={styles.viewInput}>
 					<Image source={ICONS.search} style={styles.iconSearch} />
 					<TextInput placeholder="Tìm kiếm" style={styles.input} />
-				</View>
+				</View> */}
 
 				<View style={{marginVertical: heightScale(10)}}></View>
 
@@ -64,11 +64,26 @@ const ManageUser = (props: RootStackScreenProps<'ManageUser'>) => {
 							/>
 						</View>
 
-						<View>
+						<View style={{flex: 1}}>
+							{item.isBlocked && (
+								<View
+									style={{
+										position: 'absolute',
+										zIndex: -1,
+										right: 0,
+										backgroundColor: colors.gray,
+										width: widthScale(60),
+										height: widthScale(50),
+										borderRadius: 100,
+										justifyContent: 'center',
+										alignItems: 'center',
+									}}>
+									<CustomText size={12} text={'Blocked'} />
+								</View>
+							)}
 							<CustomText font={FONT_FAMILY.BOLD} text={item.name} />
 							<CustomText text={item.phone} />
 							<CustomText text={`Ngày đăng ký: ${moment(item.dateRegister).format('DD/MM/YYYY')}`} />
-							<CustomText color={colors.red} font={FONT_FAMILY.BOLD} size={13} text={'KHOÁ TÀI KHOẢN'} />
 						</View>
 					</TouchableOpacity>
 				))}

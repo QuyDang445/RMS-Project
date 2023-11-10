@@ -10,6 +10,7 @@ import EditPaymentFee from '../screens/admin/edit-payment-fee';
 import InfoAcceptServicer from '../screens/admin/info-accept-servicer';
 import InfoDetailServicer from '../screens/admin/info-detail-servicer';
 import InfoDetailUser from '../screens/admin/info-detail-user';
+import ManagePayment from '../screens/admin/manage-payment';
 import ManageServicer from '../screens/admin/manage-servicer';
 import ManageUser from '../screens/admin/manage-user';
 import Payment from '../screens/admin/payment';
@@ -21,9 +22,11 @@ import DetailNotification from '../screens/detail-notification';
 import DetailOrder from '../screens/detail-order';
 import DetailService from '../screens/detail-service';
 import EvaluateService from '../screens/evaluate-service';
+import FeeService from '../screens/fee-service';
 import ForgotPass from '../screens/forgot-pass';
 import InfoServicer from '../screens/info-servicer';
 import ListAddress from '../screens/list-address';
+import ListUserBlock from '../screens/list-user-block';
 import Login from '../screens/login';
 import Onboarding from '../screens/onboarding';
 import Otp from '../screens/otp';
@@ -46,11 +49,7 @@ const {Navigator, Screen} = createStackNavigator<RootStackScreensParams>();
 
 const Stacks = () => {
 	return (
-		<Navigator
-			screenOptions={{
-				headerShown: false,
-				cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
-			}}>
+		<Navigator screenOptions={{headerShown: false, cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS}}>
 			<Screen name={ROUTE_KEY.Splash} component={Splash} />
 			<Screen name={ROUTE_KEY.Onboarding} component={Onboarding} />
 			<Screen name={ROUTE_KEY.Login} component={Login} />
@@ -85,6 +84,9 @@ const Stacks = () => {
 			<Screen name={ROUTE_KEY.EditPaymentFee} component={EditPaymentFee} />
 			<Screen name={ROUTE_KEY.AddPayment} component={AddPayment} />
 			<Screen name={ROUTE_KEY.EvaluateService} component={EvaluateService} />
+			<Screen name={ROUTE_KEY.ListUserBlock} component={ListUserBlock} />
+			<Screen name={ROUTE_KEY.FeeService} component={FeeService} />
+			<Screen name={ROUTE_KEY.ManagePayment} component={ManagePayment} />
 		</Navigator>
 	);
 };

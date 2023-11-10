@@ -49,7 +49,7 @@ const OrderAll = () => {
 
 			for (let j = 0; j < arrServicer.length; j++) {
 				if (arrServicer[j].id === newData[i].serviceObject.servicer) {
-					servicerObject = arrServicer[i];
+					servicerObject = arrServicer[j];
 					break;
 				}
 			}

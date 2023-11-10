@@ -11,6 +11,7 @@ import {ROUTE_KEY} from '../navigator/routers';
 import {RootStackScreenProps} from '../navigator/stacks';
 import {heightScale, widthScale} from '../styles/scaling-utils';
 import {getServicerALl} from '../utils';
+import notifee from '@notifee/react-native';
 
 const HomeAdmin = (props: RootStackScreenProps<'Home'>) => {
 	const {navigation} = props;
@@ -37,6 +38,13 @@ const HomeAdmin = (props: RootStackScreenProps<'Home'>) => {
 			getServicerPending();
 		}, []),
 	);
+	const requestGiveNotification = () => notifee.requestPermission();
+
+	useEffect(() => {
+		setTimeout(() => {
+			requestGiveNotification();
+		}, 1000);
+	}, []);
 
 	return (
 		<FixedContainer>
@@ -86,6 +94,20 @@ const HomeAdmin = (props: RootStackScreenProps<'Home'>) => {
 					}}>
 					<Image source={ICONS.user_accept} style={styles.image} />
 					<CustomText font={FONT_FAMILY.BOLD} text={'QUẢN LÝ TÀI KHOẢN NGƯỜI CUNG\nCẤP DỊCH VỤ'} />
+				</TouchableOpacity>
+				<TouchableOpacity
+					onPress={() => navigation.navigate(ROUTE_KEY.ManagePayment)}
+					style={{
+						flexDirection: 'row',
+						borderRadius: 5,
+						borderWidth: 1,
+						alignItems: 'center',
+						marginTop: heightScale(20),
+						paddingVertical: heightScale(10),
+						paddingLeft: widthScale(10),
+					}}>
+					<Image source={ICONS.user_accept} style={styles.image} />
+					<CustomText font={FONT_FAMILY.BOLD} text={'DUYỆT CÁC GIAO DỊCH NẠP TIỀN'} />
 				</TouchableOpacity>
 			</ScrollView>
 		</FixedContainer>

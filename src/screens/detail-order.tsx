@@ -21,7 +21,13 @@ import {heightScale, widthScale} from '../styles/scaling-utils';
 import {AlertYesNo, generateRandomId, getColorStatusOrder, getStatusOrder, showMessage} from '../utils';
 import {getImageFromDevice, uploadImage} from '../utils/image';
 import Logger from '../utils/logger';
-import {pushNotificationToServiceCancelOrder} from '../utils/notification';
+import {
+	pushNotificationAdminUserReport,
+	pushNotificationServiceBookingCancelByUser,
+	pushNotificationUserBookingCancelByServicer,
+	pushNotificationUserBookingConfirm,
+	pushNotificationUserBookingDone,
+} from '../utils/notification';
 
 const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 	const {navigation, route} = props;
@@ -70,7 +76,8 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 									...newData,
 									status: TYPE_ORDER_SERVICE.OrderCanceled,
 									statusCancel: reasonCancel,
-								}).then(() => {
+								}).then(async () => {
+									await pushNotificationServiceBookingCancelByUser(data.id, data.serviceObject.servicer, data.serviceObject.name);
 									showMessage('Huỷ đơn hàng thành công!');
 									navigation.goBack();
 								});
@@ -92,7 +99,8 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 									...newData,
 									status: TYPE_ORDER_SERVICE.OrderCanceled,
 									statusCancel: reasonCancel,
-								}).then(() => {
+								}).then(async () => {
+									await pushNotificationUserBookingCancelByServicer(data.idUser, data.id, data?.serviceObject.name, reasonCancel);
 									showMessage('Huỷ đơn hàng thành công!');
 									navigation.goBack();
 								});
@@ -113,7 +121,8 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 			API.get(`${TABLE.ORDERS}/${data.id}`)
 				.then(async (newData: any) => {
 					if (newData?.status !== TYPE_ORDER_SERVICE.OrderCanceled) {
-						await API.put(`${TABLE.ORDERS}/${data.id}`, {...newData, status: TYPE_ORDER_SERVICE.OrderInProcess}).then(() => {
+						await API.put(`${TABLE.ORDERS}/${data.id}`, {...newData, status: TYPE_ORDER_SERVICE.OrderInProcess}).then(async () => {
+							await pushNotificationUserBookingConfirm(data.idUser, data.id, data.serviceObject?.name);
 							showMessage('Xác nhận thành công!');
 						});
 					} else {
@@ -138,13 +147,12 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 							imageDoneUp.push(url);
 						}
 
-						await API.put(`${TABLE.ORDERS}/${data.id}`, {
-							...newData,
-							status: TYPE_ORDER_SERVICE.OrderCompleted,
-							imageDone: imageDoneUp,
-						}).then(() => {
-							showMessage('Hoàn thành!');
-						});
+						await API.put(`${TABLE.ORDERS}/${data.id}`, {...newData, status: TYPE_ORDER_SERVICE.OrderCompleted, imageDone: imageDoneUp}).then(
+							async () => {
+								await pushNotificationUserBookingDone(data.idUser, data.id, data?.serviceObject?.name);
+								showMessage('Hoàn thành!');
+							},
+						);
 					} else {
 						showMessage('Đơn hàng đã bị huỷ!');
 					}
@@ -154,7 +162,19 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 		});
 	};
 
-	const handleReport = (reasonReport: string) => {};
+	const handleReport = (reasonReport: string) => {
+		AlertYesNo(undefined, 'Xác nhận?', async () => {
+			Spinner.show();
+			API.get(`${TABLE.ORDERS}/${data.id}`)
+				.then(async newData => {
+					await API.put(`${TABLE.ORDERS}/${data.id}`, {...newData, isEvaluate: true}).then(async () => {
+						pushNotificationAdminUserReport(data.servicerObject.name, reasonReport);
+						showMessage('Báo cáo thành công');
+					});
+				})
+				.finally(() => Spinner.hide());
+		});
+	};
 
 	const handleEvaluate = () => {
 		navigation.navigate(ROUTE_KEY.EvaluateService, {data: data});
@@ -235,7 +255,7 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 				{!!data?.imageDone?.length && (
 					<View style={{marginTop: heightScale(15)}}>
 						<CustomText font={FONT_FAMILY.BOLD} text={'KẾT QUẢ'} />
-						<ScrollView horizontal>
+						<ScrollView showsHorizontalScrollIndicator={false} horizontal>
 							{data?.imageDone?.map(item => (
 								<Image key={generateRandomId()} style={styles.imageReview} source={{uri: item}} />
 							))}

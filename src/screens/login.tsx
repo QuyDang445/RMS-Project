@@ -46,14 +46,15 @@ const Login = (props: RootStackScreenProps<'Login'>) => {
 
 		for (let i = 0; i < users.length; i++) {
 			if (users[i].phone === phone && users[i].password === password) {
-				// update token user:
-				const tokenDevice = await messaging().getToken();
-				const newUser = await API.put(`${TABLE.USERS}/${users[i]?.id}`, {...users[i], tokenDevice: tokenDevice});
 				Spinner.hide();
-				// check
 				if (users[i].type === TYPE_USER.SERVICER && !users[i]?.isAccept) {
 					return showMessage('Tài khoản của bạn đang chờ admin sét duyệt');
 				} else {
+					if (users[i]?.isBlocked) {
+						return showMessage('Tài khoản của bạn đã bị khoá!');
+					}
+					const tokenDevice = await messaging().getToken();
+					const newUser = await API.put(`${TABLE.USERS}/${users[i]?.id}`, {...users[i], tokenDevice: tokenDevice});
 					dispatch(cacheUserInfo(newUser));
 					return navigation.dispatch(CommonActions.reset({index: 0, routes: [{name: ROUTE_KEY.BottomTab}]}));
 				}

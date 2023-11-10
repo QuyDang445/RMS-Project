@@ -35,12 +35,15 @@ const UpdateInformation = (props: RootStackScreenProps<'UpdateInformation'>) => 
 			const avatar = await uploadImage(image.uri);
 			Spinner.hide();
 
-			const res = await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...userInfo, avatar});
+			const res = await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...userInfo, avatar: avatar});
+			console.log(res);
+
 			dispatch(cacheUserInfo(res));
 			setLoading(false);
 		}
 		Spinner.hide();
 	};
+	console.log(userInfo);
 
 	const onPressSave = async () => {
 		if (!name?.trim()) {

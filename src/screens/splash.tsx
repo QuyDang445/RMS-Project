@@ -1,6 +1,7 @@
 import messaging from '@react-native-firebase/messaging';
 import LottieView from 'lottie-react-native';
 import React, {memo, useEffect} from 'react';
+import {StyleSheet} from 'react-native';
 import {ANIMATIONS} from '../assets/image-paths';
 import FixedContainer from '../components/fixed-container';
 import {TABLE} from '../constants/enum';
@@ -18,11 +19,11 @@ const Splash = (props: RootStackScreenProps<'Splash'>) => {
 
 	const userInfo = useAppSelector(state => state.userInfoReducer.userInfo);
 
-	const updateTokenDevice = async () => {
+	const updateTokenDevice = async (isNull?: boolean) => {
 		const userCurrent = await API.get(`${TABLE.USERS}/${userInfo?.id}`);
 
 		const token = await messaging().getToken();
-		const newUser = await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...userCurrent, tokenDevice: token});
+		const newUser = await API.put(`${TABLE.USERS}/${userInfo?.id}`, {...userCurrent, tokenDevice: isNull ? '' : token});
 		console.log('TOKEN FCM-->', token);
 
 		dispatch(updateUserInfo(newUser));
@@ -30,9 +31,9 @@ const Splash = (props: RootStackScreenProps<'Splash'>) => {
 
 	useEffect(() => {
 		(async () => {
-			await sleep(2000);
-			if (userInfo) {
-				await updateTokenDevice();
+			await sleep(__DEV__ ? 0 : 1000);
+			if (userInfo && !userInfo?.isBlocked) {
+				await updateTokenDevice(true);
 				navigation.replace(ROUTE_KEY.BottomTab);
 			} else {
 				navigation.replace(ROUTE_KEY.Login);
@@ -41,9 +42,20 @@ const Splash = (props: RootStackScreenProps<'Splash'>) => {
 	}, []);
 
 	return (
-		<FixedContainer style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-			<LottieView style={{width: widthScale(300), height: widthScale(300)}} source={ANIMATIONS.SPLASH} autoPlay loop speed={1.5} />
+		<FixedContainer style={styles.view}>
+			<LottieView style={styles.image} source={ANIMATIONS.SPLASH} autoPlay loop speed={1.5} />
 		</FixedContainer>
 	);
 };
 export default memo(Splash);
+const styles = StyleSheet.create({
+	view: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	image: {
+		width: widthScale(300),
+		height: widthScale(300),
+	},
+});

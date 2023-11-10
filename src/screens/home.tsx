@@ -17,6 +17,7 @@ import {heightScale, widthScale} from '../styles/scaling-utils';
 import {generateRandomId, getServiceAll} from '../utils';
 import messaging from '@react-native-firebase/messaging';
 import {sendNotificationToDevices} from '../utils/notification';
+import Logger from '../utils/logger';
 
 const Home = (props: RootStackScreenProps<'Home'>) => {
 	const {navigation} = props;
@@ -73,7 +74,7 @@ const Home = (props: RootStackScreenProps<'Home'>) => {
 		}, 1000);
 	}, []);
 
-	const renderItemCategories = ({item}: {item: Category}) => {
+	const renderItemCategories = ({item}: any) => {
 		return (
 			<TouchableOpacity
 				onPress={() => {

@@ -28,7 +28,7 @@ const App = () => {
 			id: CHANNEL_ID,
 			importance: AndroidImportance.HIGH,
 			name: CHANNEL_ID,
-			sound: CHANNEL_ID,
+			sound: 'custom_sound',
 		});
 	}, []);
 

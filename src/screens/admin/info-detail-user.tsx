@@ -24,27 +24,54 @@ const InfoDetailUser = (props: RootStackScreenProps<'InfoDetailUser'>) => {
 	const [reason, setReason] = useState<TYPE_BLOCK_SERVICER>();
 	const [reasonText, setReasonText] = useState('');
 
-	const handleBlock = () => {
-		AlertYesNo(undefined, 'Bạn chắc chắn muốn chặn user này?', async () => {
-			// Spinner.show();
-			// const userInfo = await API.get(`${TABLE.USERS}/${data.id}`);
-			// API.put(`${TABLE.USERS}/${data.id}`, {...userInfo, isBlocked: true})
-			// 	.then(() => {
-			// 		showMessage('Chặn user thành công!');
-			// 		navigation.goBack();
-			// 	})
-			// 	.finally(() => Spinner.hide());
-		});
+	// const handleBlock = () => {
+	// 	AlertYesNo(undefined, 'Bạn chắc chắn muốn chặn user này?', async () => {
+	// 		// Spinner.show();
+	// 		// const userInfo = await API.get(`${TABLE.USERS}/${data.id}`);
+	// 		// API.put(`${TABLE.USERS}/${data.id}`, {...userInfo, isBlocked: true})
+	// 		// 	.then(() => {
+	// 		// 		showMessage('Chặn user thành công!');
+	// 		// 		navigation.goBack();
+	// 		// 	})
+	// 		// 	.finally(() => Spinner.hide());
+	// 	});
+	// };
+
+	const handleBlock = async () => {
+		if (!reasonText) {
+			return showMessage('Vui lòng nhập lí do!');
+		}
+
+		Spinner.show();
+		const newData = await API.get(`${TABLE.USERS}/${data.id}`);
+		API.put(`${TABLE.USERS}/${data.id}`, {...newData, isBlocked: true, reasonBlock: reason})
+			.then(() => {
+				showMessage('Đã chặn ' + data.name);
+				navigation.goBack();
+			})
+			.finally(() => Spinner.hide());
+	};
+	const handleUnBlock = async () => {
+		Spinner.show();
+		const newData = await API.get(`${TABLE.USERS}/${data.id}`);
+		API.put(`${TABLE.USERS}/${data.id}`, {...newData, isBlocked: false, reasonBlock: ''})
+			.then(() => {
+				showMessage('Đã mở khoá cho ' + data.name);
+				navigation.goBack();
+			})
+			.finally(() => Spinner.hide());
 	};
 
 	return (
 		<FixedContainer>
 			<CustomHeader title="THÔNG TIN CHI TIẾT" />
 			<ScrollView style={styles.view}>
-				<Image
-					style={{width: widthScale(100), height: heightScale(100), alignSelf: 'center', borderRadius: 100, marginVertical: heightScale(20)}}
-					source={{uri: data.avatar}}
-				/>
+				{!!data.avatar && (
+					<Image
+						style={{width: widthScale(100), height: heightScale(100), alignSelf: 'center', borderRadius: 100, marginVertical: heightScale(20)}}
+						source={{uri: data.avatar}}
+					/>
+				)}
 
 				<View style={{borderRadius: 5, borderWidth: 0.5, padding: 5, marginBottom: heightScale(10)}}>
 					<CustomText text={'HỌ VÀ TÊN:   '} font={FONT_FAMILY.BOLD} size={14} rightContent={<CustomText text={data.name} size={15} />} />
@@ -65,7 +92,11 @@ const InfoDetailUser = (props: RootStackScreenProps<'InfoDetailUser'>) => {
 			</ScrollView>
 
 			<View style={{padding: widthScale(20)}}>
-				<CustomButton onPress={() => setVisibleBlock(true)} style={{backgroundColor: 'red'}} text="KHOÁ TÀI KHOẢN" />
+				{data.isBlocked ? (
+					<CustomButton backgroundColor={colors.appColor} onPress={handleUnBlock} text="MỞ KHOÁ TÀI KHOẢN" />
+				) : (
+					<CustomButton backgroundColor={colors.red} onPress={() => setVisibleBlock(true)} text="KHOÁ TÀI KHOẢN" />
+				)}
 			</View>
 
 			<Modal
@@ -84,14 +115,17 @@ const InfoDetailUser = (props: RootStackScreenProps<'InfoDetailUser'>) => {
 									<CustomRadioButton
 										onPress={() => {
 											setReason(TYPE_BLOCK_SERVICER.ThereIsUnusualSpamBehavior);
-											setReasonText('');
+											setReasonText('Có hành vi spam bất thường');
 										}}
 										isChecked={reason === TYPE_BLOCK_SERVICER.ThereIsUnusualSpamBehavior}
 										text="Có hành vi spam bất thường"
 									/>
 
 									<CustomRadioButton
-										onPress={() => setReason(TYPE_BLOCK_SERVICER.Other)}
+										onPress={() => {
+											setReason(TYPE_BLOCK_SERVICER.Other);
+											setReasonText('');
+										}}
 										isChecked={reason === TYPE_BLOCK_SERVICER.Other}
 										text="Khác"
 									/>

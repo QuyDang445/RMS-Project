@@ -4,17 +4,18 @@ import CustomButton from '../components/custom-button';
 import CustomHeader from '../components/custom-header';
 import CustomText from '../components/custom-text';
 import FixedContainer from '../components/fixed-container';
+import Spinner from '../components/spinner';
 import Star from '../components/star';
-import {WIDTH} from '../constants/constants';
+import {API_GET_INFO_COORDINATE, WIDTH} from '../constants/constants';
 import {FONT_FAMILY, TABLE, TYPE_USER} from '../constants/enum';
-import {EvaluateProps, UserProps} from '../constants/types';
+import {EvaluateProps, ServicerBlockUser, UserProps} from '../constants/types';
 import {ROUTE_KEY} from '../navigator/routers';
 import {RootStackScreenProps} from '../navigator/stacks';
 import API from '../services/api';
 import {useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
-import {generateRandomId} from '../utils';
+import {generateRandomId, showMessage} from '../utils';
 
 const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 	const {navigation, route} = props;
@@ -53,7 +54,30 @@ const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 		})();
 	}, []);
 
-	const onPressBooking = () => navigation.navigate(ROUTE_KEY.Booking, {service: data});
+	const onPressBooking = async () => {
+		const servicer = (await API.get(`${TABLE.USERS}/${data.servicer}`)) as UserProps;
+		if (!servicer?.receiveBooking) {
+			return showMessage('Thợ này hiện không hoạt động!');
+		}
+
+		Spinner.show();
+		API.get(`${TABLE.SERVICE_BLOCK_USER}`, true)
+			.then((res: ServicerBlockUser[]) => {
+				let check = false;
+				for (let i = 0; i < res.length; i++) {
+					if (res[i].phone === userInfo?.phone && data.servicer === res[i].idServicer) {
+						check = true;
+					}
+				}
+
+				if (check) {
+					showMessage('Bạn đã bị người dùng này chặn!');
+				} else {
+					navigation.navigate(ROUTE_KEY.Booking, {service: data});
+				}
+			})
+			.finally(() => Spinner.hide());
+	};
 
 	const onPressViewInfoServicer = () => {
 		navigation.navigate(ROUTE_KEY.InfoServicer, {idServicer: data.servicer});
@@ -107,7 +131,7 @@ const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 				<View style={{padding: widthScale(10)}}>
 					{evaluates.slice(0, 5).map(item => {
 						return (
-							<View style={{flexDirection: 'row', marginVertical: heightScale(5), alignItems: 'center'}} key={generateRandomId()}>
+							<View style={{flexDirection: 'row', marginVertical: heightScale(5)}} key={generateRandomId()}>
 								<Image style={styles.avatarComment} source={{uri: item.userObject?.avatar}} />
 								<View style={{marginLeft: widthScale(10)}}>
 									<CustomText text={item?.userObject?.name} font={FONT_FAMILY.BOLD} />
