@@ -14,12 +14,12 @@ import {RootStackScreenProps} from '../navigator/stacks';
 import API from '../services/api';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
-import {generateRandomId, getServiceAll} from '../utils';
-import messaging from '@react-native-firebase/messaging';
-import {sendNotificationToDevices} from '../utils/notification';
-import Logger from '../utils/logger';
+import {generateRandomId, getServiceAll, getServiceAllNew} from '../utils';
 
 const Home = (props: RootStackScreenProps<'Home'>) => {
+	const text = {
+		title: 'TRANG CHỦ',
+	};
 	const {navigation} = props;
 
 	const [filterCategory, setFilterCategory] = useState<Category>();
@@ -37,11 +37,11 @@ const Home = (props: RootStackScreenProps<'Home'>) => {
 
 	const onRefresh = async () => {
 		setRefreshing(true);
-		Promise.all([getAllService(), getCategories()]).finally(() => setRefreshing(false));
+		Promise.all([getAllService(), getCategories()]).then(() => setRefreshing(false));
 	};
 
 	const getAllService = async () => {
-		const data = await getServiceAll();
+		const data = await getServiceAllNew();
 		allServiceRef.current = data;
 		setServiceAll(data);
 	};
@@ -110,7 +110,7 @@ const Home = (props: RootStackScreenProps<'Home'>) => {
 
 	return (
 		<FixedContainer>
-			<CustomHeader title="TRANG CHỦ" hideBack />
+			<CustomHeader title={text.title} hideBack />
 			<ScrollView
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
 				showsVerticalScrollIndicator={false}
@@ -241,9 +241,10 @@ const styles = StyleSheet.create({
 	},
 	itemService: {
 		width: widthScale(150),
-		backgroundColor: `${colors.blackGray}10`,
 		borderRadius: 10,
 		marginRight: widthScale(15),
 		overflow: 'hidden',
+		borderWidth: 1,
+		borderColor: `${colors.grayLine}50`,
 	},
 });

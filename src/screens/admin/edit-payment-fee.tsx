@@ -1,15 +1,32 @@
-import React, {memo} from 'react';
+import React, {memo, useState} from 'react';
 import {ScrollView, StyleSheet, TextInput, View} from 'react-native';
 import CustomButton from '../../components/custom-button';
 import CustomHeader from '../../components/custom-header';
 import CustomText from '../../components/custom-text';
 import FixedContainer from '../../components/fixed-container';
-import {FONT_FAMILY} from '../../constants/enum';
+import Spinner from '../../components/spinner';
+import {FONT_FAMILY, TABLE} from '../../constants/enum';
 import {RootStackScreenProps} from '../../navigator/stacks';
+import API from '../../services/api';
 import {widthScale} from '../../styles/scaling-utils';
+import {showMessage} from '../../utils';
 
 const EditPaymentFee = (props: RootStackScreenProps<'EditPaymentFee'>) => {
 	const {navigation, route} = props;
+	const [fee, setFee] = useState(route?.params?.fee?.toString());
+
+	const onPressSave = () => {
+		const price = Number(fee);
+		if (price > 0) {
+			Spinner.show();
+			API.put(`${TABLE.ADMIN}/PAYMENT`, {price: price})
+				.then(() => {
+					showMessage('Sửa thành công!');
+					navigation.goBack();
+				})
+				.finally(() => Spinner.hide());
+		}
+	};
 
 	return (
 		<FixedContainer>
@@ -18,12 +35,12 @@ const EditPaymentFee = (props: RootStackScreenProps<'EditPaymentFee'>) => {
 			<ScrollView style={styles.view}>
 				<CustomText font={FONT_FAMILY.BOLD} text={'PHÍ DỊCH VỤ'} size={14} />
 				<View style={styles.viewInput}>
-					<TextInput keyboardType="numeric" />
+					<TextInput value={fee?.toString()} onChangeText={setFee} keyboardType="numeric" />
 				</View>
 			</ScrollView>
 
 			<View style={{padding: widthScale(20)}}>
-				<CustomButton text="CẬP NHẬT" />
+				<CustomButton onPress={onPressSave} text="CẬP NHẬT" />
 			</View>
 		</FixedContainer>
 	);

@@ -1,12 +1,15 @@
-import {Alert, Linking, PermissionsAndroid, ToastAndroid} from 'react-native';
+import {Alert, DeviceEventEmitter, Linking, PermissionsAndroid} from 'react-native';
 import Geolocation from 'react-native-geolocation-service';
 import {PERMISSIONS, request} from 'react-native-permissions';
-import {TABLE, TYPE_ORDER_SERVICE, TYPE_USER} from '../constants/enum';
-import {EvaluateProps, OrderProps, ServiceProps, UserProps} from '../constants/types';
+import {APPLICATION_ID, WEB_API_KEY} from '../constants/constants';
+import {EMIT_EVENT, TABLE, TYPE_ORDER_SERVICE, TYPE_USER} from '../constants/enum';
+import {Category, EvaluateProps, OrderProps, ServiceProps, UserProps} from '../constants/types';
 import API from '../services/api';
 import {colors} from '../styles/colors';
+import Logger from './logger';
 
-export const parseObjectToArray = (object: any) => {
+export const parseObjectToArray = (object?: any) => {
+	if (!object) return [];
 	try {
 		const array = [];
 		for (const key in object) {
@@ -32,10 +35,8 @@ export const generateRandomId = () => {
 	});
 };
 
-export const showMessage = (message: string) => {
-	// console.log(message);
-	ToastAndroid.show(message, ToastAndroid.LONG);
-};
+export const showMessage = (message: string) => DeviceEventEmitter.emit(EMIT_EVENT.TOAST, message);
+
 export const AlertYesNo = (title = 'THÔNG BÁO', message?: string, onYes?: () => void) =>
 	Alert.alert('', message, [{text: 'HUỶ'}, {text: 'OK', onPress: onYes}], {cancelable: false});
 
@@ -129,14 +130,26 @@ export const getServiceAll = async () => {
 	const arr = (await API.get(`${TABLE.SERVICE}`, true)) as ServiceProps[];
 
 	// get info category
+	const allCategory = await API.get(`${TABLE.CATEGORY}`, true);
+	const getCategoryFromID = (idCategory: string) => {
+		for (let i = 0; i < allCategory.length; i++) {
+			if (idCategory === allCategory[i].id) return allCategory[i];
+		}
+	};
 	for (let i = 0; i < arr.length; i++) {
-		const category = (await API.get(`${TABLE.CATEGORY}/${arr[i].category}`, undefined, true)) as any;
+		const category = getCategoryFromID(arr[i].category);
 		arr[i].categoryObject = category;
 	}
 
-	// get info servicer
+	// get info service
+	const allServicer = await API.get(`${TABLE.USERS}`, true);
+	const getServicerFromID = (idServicer: string) => {
+		for (let i = 0; i < allServicer.length; i++) {
+			if (idServicer === allServicer[i].id) return allServicer[i];
+		}
+	};
 	for (let i = 0; i < arr.length; i++) {
-		const service = (await API.get(`${TABLE.USERS}/${arr[i].servicer}`, undefined, true)) as any;
+		const service = getServicerFromID(arr[i].servicer);
 		arr[i].servicerObject = service;
 	}
 
@@ -150,7 +163,41 @@ export const getServiceAll = async () => {
 		for (let j = 0; j < evaluate.length; j++) {
 			totalStar += evaluate[j].star;
 		}
-		arr[i].star = Math.round(totalStar / (evaluate.length || 1));
+		arr[i].star = totalStar / (evaluate.length || 1);
+	}
+	return arr;
+};
+
+export const getServiceAllNew = async () => {
+	const data = await API.getDataFromMultipleTables([TABLE.SERVICE, TABLE.CATEGORY, TABLE.USERS, TABLE.EVALUATE]);
+
+	const arr = parseObjectToArray(data.SERVICE);
+	const allCategory = parseObjectToArray(data.CATEGORY);
+	const allServicer = parseObjectToArray(data.USERS);
+	const allEvaluate = data.EVALUATE;
+
+	// const arr = (await API.get(`${TABLE.SERVICE}`, true)) as ServiceProps[];
+	// const allCategory = (await API.get(`${TABLE.CATEGORY}`, true)) as Category[];
+	// const allServicer = (await API.get(`${TABLE.USERS}`, true)) as UserProps[];
+	// const allEvaluate = await API.get(`${TABLE.EVALUATE}`);
+
+	for (let i = 0; i < arr.length; i++) {
+		// get info category
+		arr[i].categoryObject = allCategory.find(o => arr[i].category === o.id) as any;
+
+		// get info service
+		arr[i].servicerObject = allServicer.find(o => o.id === arr[i].servicer) as any;
+
+		// evaluate
+		const evaluate = allEvaluate?.[arr[i].id] ? parseObjectToArray(allEvaluate?.[arr[i].id]) : [];
+		arr[i].evaluate = evaluate;
+
+		// get info star
+		let totalStar = 0;
+		for (let j = 0; j < evaluate.length; j++) {
+			totalStar += evaluate[j].star;
+		}
+		arr[i].star = totalStar / (evaluate.length || 1);
 	}
 
 	return arr;
@@ -270,4 +317,77 @@ export const getOrderAllFromIDServicer = async (idServicer: string) => {
 	}
 
 	return newData as OrderProps[];
+};
+
+export const formatNumber = (number: number) => number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+export const getEvaluateFromServicer = async (id: string) => {
+	const allService = (await API.get(`${TABLE.SERVICE}`, true)) as ServiceProps[];
+	const arrFromServicer = allService.filter(o => o.servicer === id);
+	const allEvaluates = await API.get(`${TABLE.EVALUATE}`);
+
+	const allUser = (await API.get(`${TABLE.USERS}`, true)) as UserProps[];
+
+	const arr: EvaluateProps[] = [];
+	for (let i = 0; i < arrFromServicer.length; i++) {
+		const arrEvaluate = parseObjectToArray(allEvaluates?.[arrFromServicer?.[i].id]);
+		arr.push(...arrEvaluate);
+	}
+
+	for (let i = 0; i < arr.length; i++) {
+		arr[i].userObject = allUser.find(o => o.id === arr[i].user_id);
+	}
+
+	return arr as any as EvaluateProps[];
+};
+
+export const genLinkShare = async (idService: string) => {
+	const URL = `https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=${WEB_API_KEY}`;
+	const body = JSON.stringify({
+		dynamicLinkInfo: {
+			domainUriPrefix: 'https://srm150851.page.link',
+			link: `https://www.srm.com/service?s=${idService}`,
+			androidInfo: {androidPackageName: APPLICATION_ID},
+			iosInfo: {iosBundleId: APPLICATION_ID},
+		},
+	});
+
+	try {
+		const response = await fetch(URL, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: body,
+		});
+
+		const responseData = await response.json();
+
+		return responseData?.shortLink as string;
+	} catch (error) {}
+};
+
+export const getServiceDetailFromID = async (id: string) => {
+	const service = (await API.get(`${TABLE.SERVICE}/${id}`)) as ServiceProps;
+	const allCategory = (await API.get(`${TABLE.CATEGORY}`, true)) as any[];
+	const allServicer = (await API.get(`${TABLE.USERS}`, true)) as any[];
+
+	service.id = id;
+
+	service.categoryObject = allCategory.find(o => o.id === service.category);
+
+	service.servicerObject = allServicer.find(o => o.id === service.servicer);
+
+	const evaluate = (await API.get(`${TABLE.EVALUATE}/${id}`, true)) as EvaluateProps[];
+	service.evaluate = evaluate;
+
+	let totalStar = 0;
+	for (let j = 0; j < evaluate.length; j++) {
+		totalStar += evaluate[j].star;
+	}
+	service.star = totalStar / (evaluate.length || 1);
+	return service;
+};
+
+export const getInfoUserFromID = async (id: string) => {
+	const allUser = (await API.get(`${TABLE.USERS}`, true)) as UserProps[];
+	return allUser.find(o => o.id === id);
 };

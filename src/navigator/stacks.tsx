@@ -2,6 +2,7 @@ import {CardStyleInterpolators, createStackNavigator, StackNavigationProp, Stack
 import React, {memo} from 'react';
 import {StyleSheet} from 'react-native';
 import AddService from '../screens/add-service';
+import AddressServicer from '../screens/address-servicer';
 import AcceptServicer from '../screens/admin/accept-servicer';
 import AddCategory from '../screens/admin/add-category';
 import AddPayment from '../screens/admin/add-payment';
@@ -22,6 +23,7 @@ import DetailNotification from '../screens/detail-notification';
 import DetailOrder from '../screens/detail-order';
 import DetailService from '../screens/detail-service';
 import EvaluateService from '../screens/evaluate-service';
+import FAQ from '../screens/faq';
 import FeeService from '../screens/fee-service';
 import ForgotPass from '../screens/forgot-pass';
 import InfoServicer from '../screens/info-servicer';
@@ -30,6 +32,7 @@ import ListUserBlock from '../screens/list-user-block';
 import Login from '../screens/login';
 import Onboarding from '../screens/onboarding';
 import Otp from '../screens/otp';
+import Policy from '../screens/policy';
 import Search from '../screens/search';
 import Setting from '../screens/setting';
 import SignUp from '../screens/sign-up';
@@ -87,6 +90,9 @@ const Stacks = () => {
 			<Screen name={ROUTE_KEY.ListUserBlock} component={ListUserBlock} />
 			<Screen name={ROUTE_KEY.FeeService} component={FeeService} />
 			<Screen name={ROUTE_KEY.ManagePayment} component={ManagePayment} />
+			<Screen name={ROUTE_KEY.AddressServicer} component={AddressServicer} />
+			<Screen name={ROUTE_KEY.Policy} component={Policy} />
+			<Screen name={ROUTE_KEY.FAQ} component={FAQ} />
 		</Navigator>
 	);
 };

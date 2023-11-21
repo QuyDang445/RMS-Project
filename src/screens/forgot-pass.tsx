@@ -18,7 +18,7 @@ import {showMessage} from '../utils';
 const ForgotPass = (props: RootStackScreenProps<'ForgotPass'>) => {
 	const {navigation} = props;
 
-	const [phone, setPhone] = useState('0563569011');
+	const [phone, setPhone] = useState('');
 
 	const onPressSendOtp = async () => {
 		const phoneCheck = `+84${phone}`;
@@ -78,7 +78,7 @@ const ForgotPass = (props: RootStackScreenProps<'ForgotPass'>) => {
 						placeholderTextColor={colors.grayText}
 					/>
 				</View>
-				<CustomButton disabled={!phone || phone.length < 10} text="Nhận mã OTP" style={{marginTop: heightScale(20)}} onPress={onPressSendOtp} />
+				<CustomButton disabled={!/^0\d{9}$/.test(phone)} text="Nhận mã OTP" style={{marginTop: heightScale(20)}} onPress={onPressSendOtp} />
 			</View>
 		</FixedContainer>
 	);

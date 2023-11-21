@@ -1,5 +1,5 @@
 import {FirebaseAuthTypes} from '@react-native-firebase/auth';
-import {Category, CategoryService, OrderProps, ServiceProps, UserProps} from '../constants/types';
+import {BankType, Category, CategoryService, OrderProps, ServiceProps, UserProps} from '../constants/types';
 
 export type RootStackScreensParams = {
 	Splash: undefined;
@@ -39,10 +39,13 @@ export type RootStackScreensParams = {
 	AddCategory: undefined | {category: CategoryService};
 	AddServiceCategory: undefined | {categoryService: Category};
 	Payment: undefined;
-	EditPaymentFee: undefined;
-	AddPayment: undefined;
+	EditPaymentFee: {fee: number};
+	AddPayment: undefined | {data: BankType};
 	EvaluateService: {data: OrderProps};
 	ListUserBlock: undefined;
 	FeeService: undefined;
 	ManagePayment: undefined;
+	AddressServicer: undefined;
+	Policy: undefined;
+	FAQ: undefined;
 };

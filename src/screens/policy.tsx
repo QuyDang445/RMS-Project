@@ -3,14 +3,14 @@ import {ActivityIndicator, StyleSheet, View} from 'react-native';
 import WebView from 'react-native-webview';
 import CustomHeader from '../components/custom-header';
 import FixedContainer from '../components/fixed-container';
-import {HTML_TERM_EN} from '../constants/data';
+import {HTML_POLICY_EN} from '../constants/data';
 
-const Term = () => {
+const Policy = () => {
 	return (
 		<FixedContainer>
-			<CustomHeader title={'CHÍNH SÁCH QUYỀN RIÊNG TƯ'} />
+			<CustomHeader title="QUY ĐỊNH ĐIỀU KHOẢN" />
 			<WebView
-				source={{html: HTML_TERM_EN}}
+				source={{html: HTML_POLICY_EN}}
 				startInLoadingState={true}
 				renderLoading={() => (
 					<View style={styles.loading}>
@@ -22,7 +22,7 @@ const Term = () => {
 	);
 };
 
-export default Term;
+export default Policy;
 const styles = StyleSheet.create({
 	loading: {
 		width: '100%',

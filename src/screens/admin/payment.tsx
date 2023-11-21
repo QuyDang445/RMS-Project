@@ -1,21 +1,48 @@
-import {Image, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import React, {memo} from 'react';
+import {Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {memo, useCallback, useEffect, useState} from 'react';
 import {RootStackScreenProps} from '../../navigator/stacks';
 import FixedContainer from '../../components/fixed-container';
 import CustomHeader from '../../components/custom-header';
 import {heightScale, widthScale} from '../../styles/scaling-utils';
 import CustomText from '../../components/custom-text';
 import {ICONS} from '../../assets/image-paths';
-import {FONT_FAMILY} from '../../constants/enum';
-import {generateRandomId} from '../../utils';
+import {FONT_FAMILY, TABLE} from '../../constants/enum';
+import {formatNumber, generateRandomId} from '../../utils';
 import {colors} from '../../styles/colors';
 import {ROUTE_KEY} from '../../navigator/routers';
+import {useFocusEffect} from '@react-navigation/native';
+import API from '../../services/api';
+import LoadingScreen from '../../components/loading-screen';
+import {BankType} from '../../constants/types';
 
 const Payment = (props: RootStackScreenProps<'Payment'>) => {
 	const {navigation} = props;
 
-	const onPressEditFee = () => navigation.navigate(ROUTE_KEY.EditPaymentFee);
+	const [loading, setLoading] = useState(false);
+	const [price, setPrice] = useState(0);
+	const [list, setList] = useState<BankType[]>([]);
+
+	useFocusEffect(
+		useCallback(() => {
+			onRefresh();
+		}, []),
+	);
+
+	const onRefresh = () => {
+		setLoading(true);
+		Promise.all([
+			API.get(`${TABLE.ADMIN}/PAYMENT`).then(res => {
+				setPrice(res?.price);
+			}),
+			API.get(`${TABLE.ADMIN}/ACCOUNT_BANK`, true).then(res => {
+				setList(res);
+			}),
+		]).finally(() => setLoading(false));
+	};
+
+	const onPressEditFee = () => navigation.navigate(ROUTE_KEY.EditPaymentFee, {fee: price});
 	const onPressAddPayment = () => navigation.navigate(ROUTE_KEY.AddPayment);
+	const onPressEditPayment = (item: BankType) => navigation.navigate(ROUTE_KEY.AddPayment, {data: item});
 
 	return (
 		<FixedContainer>
@@ -28,21 +55,29 @@ const Payment = (props: RootStackScreenProps<'Payment'>) => {
 				}
 			/>
 
-			<ScrollView style={styles.view}>
+			<ScrollView refreshControl={<RefreshControl refreshing={loading} onRefresh={onRefresh} />} style={styles.view}>
 				<View style={styles.viewContent}>
-					<CustomText font={FONT_FAMILY.BOLD} text={'Phí dịch vụ: '} rightContent={<CustomText text={'50.000 VND/tháng'} />} />
+					<CustomText font={FONT_FAMILY.BOLD} text={'Phí dịch vụ: '} rightContent={<CustomText text={`${formatNumber(price)} VND/tháng`} />} />
 					<TouchableOpacity onPress={onPressEditFee}>
 						<Image style={styles.icon} source={ICONS.edit} />
 					</TouchableOpacity>
 				</View>
 
-				{[1, 1, 1].map(() => (
+				{list?.map(item => (
 					<View
 						key={generateRandomId()}
-						style={{marginBottom: heightScale(10), backgroundColor: `${colors.gray}80`, padding: 5, borderRadius: 5}}>
+						style={{marginBottom: heightScale(10), backgroundColor: `${colors.gray}80`, padding: 10, borderRadius: 5, paddingHorizontal: 15}}>
 						<View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
-							<CustomText font={FONT_FAMILY.BOLD} text={'Ngân hàng: '} rightContent={<CustomText text={'Techcombank'} />} />
-							<TouchableOpacity>
+							{!item?.image ? (
+								<CustomText font={FONT_FAMILY.BOLD} text={'Ngân hàng: '} rightContent={<CustomText text={item?.nameBank} />} />
+							) : (
+								<View />
+							)}
+
+							<TouchableOpacity
+								onPress={() => {
+									onPressEditPayment(item);
+								}}>
 								<Image style={styles.icon} source={ICONS.edit} />
 							</TouchableOpacity>
 						</View>
@@ -56,17 +91,21 @@ const Payment = (props: RootStackScreenProps<'Payment'>) => {
 								marginVertical: heightScale(5),
 							}}
 						/>
-						<CustomText font={FONT_FAMILY.BOLD} text={'Số tài khoản: '} rightContent={<CustomText text={'19035244530019'} />} />
-						<CustomText font={FONT_FAMILY.BOLD} text={'Tên chủ thẻ: '} rightContent={<CustomText text={'Nguyen A'} />} />
-						<CustomText font={FONT_FAMILY.BOLD} text={'Nội dung: '} rightContent={<CustomText text={'SoDienThoai_TenNguoiDongPhi'} />} />
 
-						<Image
-							resizeMode="contain"
-							source={{
-								uri: 'https://lh3.googleusercontent.com/yvncsZNeUIj7k_GkJU1wIJKnZI_TH2VeTuo7ujeqRTSzWM0ZtyyOlR6R7sodUdsEOuGVT5aeRVMhLThDgycayr5_cS-IniQet6YBzbhKfNO4Ofq0WZul-M0owBavh3oyJTpDrABx',
-							}}
-							style={{width: widthScale(250), height: heightScale(400), alignSelf: 'center'}}
-						/>
+						{item?.image ? (
+							<Image
+								resizeMode="contain"
+								source={{
+									uri: item?.image,
+								}}
+								style={{width: widthScale(250), height: heightScale(400), alignSelf: 'center'}}
+							/>
+						) : (
+							<>
+								<CustomText font={FONT_FAMILY.BOLD} text={'Số tài khoản: '} rightContent={<CustomText text={item?.number} />} />
+								<CustomText font={FONT_FAMILY.BOLD} text={'Tên chủ thẻ: '} rightContent={<CustomText text={item?.nameCard} />} />
+							</>
+						)}
 					</View>
 				))}
 			</ScrollView>

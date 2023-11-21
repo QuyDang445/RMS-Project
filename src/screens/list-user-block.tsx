@@ -102,6 +102,11 @@ const ListUserBlock = (props: RootStackScreenProps<'ListUserBlock'>) => {
 				)}
 				keyExtractor={generateRandomId}
 				data={data}
+				ListEmptyComponent={
+					<View style={{justifyContent: 'center', alignItems: 'center', marginTop: heightScale(50)}}>
+						<CustomText color={colors.grayText} text={'Không có dữ liệu!'} />
+					</View>
+				}
 			/>
 			<Modal
 				statusBarTranslucent

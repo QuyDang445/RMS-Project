@@ -1,4 +1,4 @@
-import React, {memo, useState} from 'react';
+import React, {memo, useEffect, useState} from 'react';
 import {Image, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from 'react-native';
 import {ICONS} from '../../assets/image-paths';
 import CustomButton from '../../components/custom-button';
@@ -6,35 +6,89 @@ import CustomHeader from '../../components/custom-header';
 import CustomRadioButton from '../../components/custom-radio-button';
 import CustomText from '../../components/custom-text';
 import FixedContainer from '../../components/fixed-container';
-import {FONT_FAMILY} from '../../constants/enum';
+import Spinner from '../../components/spinner';
+import {FONT_FAMILY, TABLE} from '../../constants/enum';
+import {BankType, ImageProps} from '../../constants/types';
 import {RootStackScreenProps} from '../../navigator/stacks';
+import API from '../../services/api';
 import {colors} from '../../styles/colors';
 import {heightScale, widthScale} from '../../styles/scaling-utils';
+import {showMessage} from '../../utils';
+import {getImageFromDevice, uploadImage} from '../../utils/image';
 
 const AddPayment = (props: RootStackScreenProps<'AddPayment'>) => {
-	const {navigation} = props;
+	const {navigation, route} = props;
+	const payment = route.params?.data;
+	console.log(payment);
 
 	const [isShow, setIsShow] = useState('QR');
+	const [image, setImage] = useState<ImageProps>();
+	const [nameBank, setNameBank] = useState('');
+	const [nameCard, setNameCard] = useState('');
+	const [number, setNumber] = useState('');
+
+	const disable = isShow === 'INFO' ? !nameBank || !nameCard || !number : !image;
+
+	useEffect(() => {
+		if (payment) {
+			setIsShow(payment?.image ? 'QR' : 'INFO');
+			payment.image && setImage({uri: payment.image} as any);
+			setNameBank(payment.nameBank);
+			setNameCard(payment.nameCard);
+			setNumber(payment.number);
+		}
+	}, []);
+
+	const onPressAdd = async () => {
+		if (isShow === 'INFO') {
+			Spinner.show();
+			API.post(`${TABLE.ADMIN}/ACCOUNT_BANK`, {nameBank: nameBank, number: number, nameCard: nameCard})
+				.then(() => {
+					showMessage('Thêm thành công');
+					navigation.goBack();
+				})
+				.finally(() => Spinner.hide());
+		} else {
+			Spinner.show();
+			const uri = image?.uri ? await uploadImage(image?.uri) : '';
+			API.post(`${TABLE.ADMIN}/ACCOUNT_BANK`, {image: uri})
+				.then(() => {
+					showMessage('Thêm thành công');
+					navigation.goBack();
+				})
+				.finally(() => Spinner.hide());
+		}
+	};
+
+	const onPressDelete = () => {
+		Spinner.show();
+		API.put(`${TABLE.ADMIN}/ACCOUNT_BANK/${payment?.id}`, {})
+			.then(() => {
+				showMessage('Xoá thành công!');
+				navigation.goBack();
+			})
+			.finally(() => Spinner.hide());
+	};
 
 	return (
 		<FixedContainer>
-			<CustomHeader title="THÊM PHƯƠNG THỨC THANH TOÁN" />
+			<CustomHeader title={`${payment ? 'CHỈNH SỬA' : 'THÊM'} PHƯƠNG THỨC THANH TOÁN`} />
 
 			<ScrollView style={styles.view}>
-				<CustomText font={FONT_FAMILY.BOLD} text={'TÊN PHƯƠNG THỨC THANH TOÁN'} size={14} />
-				<View style={styles.viewInput}>
-					<TextInput />
-				</View>
-
 				<View style={{marginTop: heightScale(20)}}>
 					<CustomText font={FONT_FAMILY.BOLD} text={'CÁCH HIỂN THỊ'} size={14} />
 				</View>
 
 				<CustomRadioButton isChecked={isShow === 'QR'} onPress={() => setIsShow('QR')} text="Quét mã QR" />
 				{isShow === 'QR' && (
-					<TouchableOpacity style={styles.uploadImage}>
-						{false ? (
-							<Image source={{uri: ''}} style={{flex: 1, width: '100%', height: '100%', resizeMode: 'contain'}} />
+					<TouchableOpacity
+						onPress={async () => {
+							const _ = await getImageFromDevice();
+							_ && setImage(_);
+						}}
+						style={styles.uploadImage}>
+						{image?.uri ? (
+							<Image source={{uri: image.uri}} style={{flex: 1, width: '100%', height: '100%', resizeMode: 'contain'}} />
 						) : (
 							<>
 								<Image source={ICONS.upload} style={styles.upload} />
@@ -51,30 +105,36 @@ const AddPayment = (props: RootStackScreenProps<'AddPayment'>) => {
 					<View style={{marginLeft: widthScale(10), margin: widthScale(5)}}>
 						<CustomText font={FONT_FAMILY.BOLD} text={'TÊN NGÂN HÀNG'} size={14} />
 						<View style={styles.viewInput}>
-							<TextInput />
+							<TextInput value={nameBank} onChangeText={setNameBank} />
 						</View>
 						<CustomText font={FONT_FAMILY.BOLD} text={'TÊN CHỦ THẺ'} size={14} />
 						<View style={styles.viewInput}>
-							<TextInput />
+							<TextInput value={nameCard} onChangeText={setNameCard} />
 						</View>
 						<CustomText font={FONT_FAMILY.BOLD} text={'SỐ TÀI KHOẢN'} size={14} />
 						<View style={styles.viewInput}>
-							<TextInput />
+							<TextInput value={number} onChangeText={setNumber} />
 						</View>
 					</View>
 				)}
 
-				<View style={{marginTop: heightScale(20)}}>
+				{/* <View style={{marginTop: heightScale(20)}}>
 					<CustomText font={FONT_FAMILY.BOLD} text={'NỘI DUNG CHUYỂN KHOẢN'} size={14} />
 					<View style={styles.viewInput}>
 						<TextInput />
 					</View>
-				</View>
+				</View> */}
 			</ScrollView>
 
 			<View style={{padding: widthScale(20)}}>
-				<CustomButton text="THÊM" />
+				<CustomButton onPress={onPressAdd} disabled={disable} text={payment ? 'SỬA' : 'THÊM'} />
 			</View>
+
+			{!!payment && (
+				<View style={{paddingHorizontal: widthScale(20)}}>
+					<CustomButton backgroundColor="red" onPress={onPressDelete} text="XOÁ" />
+				</View>
+			)}
 		</FixedContainer>
 	);
 };

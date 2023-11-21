@@ -1,7 +1,8 @@
 import axios from 'axios';
 import {BASE_URL} from '../constants/constants';
+import {TABLE} from '../constants/enum';
 import {parseObjectToArray} from '../utils';
-import {logAPI} from '../utils/logger';
+import Logger, {logAPI} from '../utils/logger';
 
 const initializeAxios = () => axios.create({baseURL: BASE_URL, timeout: 10000, validateStatus: () => true});
 
@@ -40,6 +41,22 @@ const API = {
 		} catch (error) {
 			console.error(error);
 			return (isParseArray ? [] : undefined) as any;
+		}
+	},
+
+	getDataFromMultipleTables: async <T extends TABLE>(arrTable: T[]): Promise<Record<T, any>> => {
+		try {
+			console.log('\nURL -> ' + `\x1b[32;1m${'GET'}\x1b[0m : ` + `\x1b[34;1m${''}${arrTable}\x1b[0m\n`);
+			const res = (await API_AXIOS.get('.json')) as any;
+			const data: Record<T, {}> = {} as Record<T, {}>;
+
+			for (let i = 0; i < arrTable.length; i++) {
+				data[arrTable[i]] = res?.[arrTable[i]];
+			}
+
+			return data;
+		} catch (error) {
+			return {} as any;
 		}
 	},
 };

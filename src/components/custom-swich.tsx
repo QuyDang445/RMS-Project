@@ -1,5 +1,5 @@
 import React, {memo, useEffect} from 'react';
-import {Animated, StyleSheet, TouchableOpacity} from 'react-native';
+import {Animated, StyleSheet, TouchableOpacity, View} from 'react-native';
 import {colors} from '../styles/colors';
 import {widthScale} from '../styles/scaling-utils';
 interface Props {
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
 		alignItems: 'flex-start',
 	},
 	viewBorder: {
-		backgroundColor: 'white',
+		backgroundColor: colors.white,
 		width: widthScale(26),
 		height: widthScale(26),
 		borderRadius: widthScale(100),

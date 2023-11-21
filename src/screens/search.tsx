@@ -140,7 +140,7 @@ const Search = (props: RootStackScreenProps<'Search'>) => {
 					onPressShow={() => setIsShowFilter(!isShowFilter)}
 					isOn={isShowFilter}
 					title="LỌC"
-					textButton={filterData?.name!}
+					textButton={filterData?.name! || 'Tất cả'}
 					filter={filter}
 				/>
 

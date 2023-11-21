@@ -1,4 +1,4 @@
-import {NOTIFICATION_TYPE, TYPE_ORDER_SERVICE, TYPE_USER} from './enum';
+import {LANGUAGE, NOTIFICATION_TYPE, TYPE_ORDER_SERVICE, TYPE_USER} from './enum';
 
 export interface ImageProps {
 	name: string;
@@ -11,7 +11,7 @@ export interface ImageProps {
 export interface UserProps {
 	id: string;
 	name: string;
-	address: string[];
+	address: string;
 	avatar: string;
 	phone: string;
 	tokenDevice: string;
@@ -26,6 +26,7 @@ export interface UserProps {
 	dateRegister?: number;
 	receiveBooking?: boolean;
 	reasonBlock: string;
+	language?: LANGUAGE;
 }
 
 export interface EvaluateProps {
@@ -121,4 +122,19 @@ export interface PaymentProps {
 	image: string;
 	servicerObject?: UserProps;
 	isAccept?: boolean;
+}
+
+export interface BankType {
+	id: string;
+	name: string;
+	number: string;
+	image?: string;
+	nameBank: string;
+	nameCard: string;
+}
+
+export interface FAQType {
+	id?: string;
+	question: string;
+	answer: string;
 }

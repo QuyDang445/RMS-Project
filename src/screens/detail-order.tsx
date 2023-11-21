@@ -1,6 +1,6 @@
 import moment from 'moment';
 import React, {memo, useEffect, useState} from 'react';
-import {FlatList, Image, Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from 'react-native';
+import {FlatList, Image, Linking, Modal, Pressable, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from 'react-native';
 import {ICONS} from '../assets/image-paths';
 import CustomButton from '../components/custom-button';
 import CustomHeader from '../components/custom-header';
@@ -196,13 +196,15 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 					</View>
 				</View>
 
-				<View style={{marginVertical: heightScale(20), flexDirection: 'row'}}>
-					<Image source={{uri: data.servicerObject?.avatar}} style={{width: widthScale(50), height: widthScale(50), borderRadius: 100}} />
-					<View style={{flex: 1, marginLeft: widthScale(10)}}>
-						<CustomText text={data.servicerObject?.name} font={FONT_FAMILY.BOLD} />
-						<CustomText text={data.servicerObject.phone} />
+				{userInfo?.type !== TYPE_USER.SERVICER && (
+					<View style={{marginVertical: heightScale(20), flexDirection: 'row'}}>
+						<Image source={{uri: data.servicerObject?.avatar}} style={{width: widthScale(50), height: widthScale(50), borderRadius: 100}} />
+						<View style={{flex: 1, marginLeft: widthScale(10)}}>
+							<CustomText text={data.servicerObject?.name} font={FONT_FAMILY.BOLD} />
+							<CustomText text={data.servicerObject.phone} />
+						</View>
 					</View>
-				</View>
+				)}
 
 				<View style={styles.viewInfo}>
 					<CustomText font={FONT_FAMILY.BOLD} text={'TRẠNG THÁI'} />
@@ -234,7 +236,15 @@ const DetailOrder = (props: RootStackScreenProps<'DetailOrder'>) => {
 					<CustomText font={FONT_FAMILY.BOLD} text={'ĐỊA CHỈ'} />
 					<View style={{padding: 10, borderWidth: 1, borderRadius: 5, marginTop: heightScale(5)}}>
 						<CustomText text={data?.userObject?.name} />
-						<CustomText text={data?.userObject?.phone} />
+						<View style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+							<CustomText text={data?.userObject?.phone} />
+							{userInfo?.type === TYPE_USER.SERVICER && (
+								<TouchableOpacity onPress={() => Linking.openURL(`tel:${data?.userObject?.phone}`)}>
+									<Image source={ICONS.call} style={{width: widthScale(25), height: widthScale(25)}} />
+								</TouchableOpacity>
+							)}
+						</View>
+
 						<CustomText text={data?.address} />
 					</View>
 				</View>

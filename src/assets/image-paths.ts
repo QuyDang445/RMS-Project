@@ -17,6 +17,14 @@ export const ICONS = {
 	add: require('./icons/add.png'),
 	camera: require('./icons/camera.png'),
 	user_accept: require('./icons/user-accept.png'),
+	call: require('./icons/call.png'),
+	share: require('./icons/share.png'),
+
+	VI: require('./icons/VI.png'),
+	ZH: require('./icons/ZH.png'),
+	EN: require('./icons/EN.png'),
+	JA: require('./icons/JA.png'),
+	KO: require('./icons/KO.png'),
 };
 
 export const IMAGES = {

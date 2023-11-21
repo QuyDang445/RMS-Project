@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {Image, Modal, StyleSheet, TouchableOpacity, View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {Image, Modal, RefreshControl, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 import {ICONS} from '../assets/image-paths';
 import CustomButton from '../components/custom-button';
 import CustomHeader from '../components/custom-header';
@@ -7,13 +7,13 @@ import CustomText from '../components/custom-text';
 import FixedContainer from '../components/fixed-container';
 import Spinner from '../components/spinner';
 import {FONT_FAMILY, TABLE} from '../constants/enum';
-import {ImageProps, PaymentServicer} from '../constants/types';
+import {BankType, ImageProps} from '../constants/types';
 import {RootStackScreenProps} from '../navigator/stacks';
 import API from '../services/api';
 import {useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
-import {AlertYesNo, showMessage} from '../utils';
+import {formatNumber, generateRandomId, showMessage} from '../utils';
 import {getImageFromDevice, uploadImage} from '../utils/image';
 import {pushNotificationAdminNewPayment} from '../utils/notification';
 
@@ -25,6 +25,21 @@ const FeeService = (props: RootStackScreenProps<'FeeService'>) => {
 	const [modal, setModal] = useState(false);
 
 	const [image, setImage] = useState<ImageProps>();
+	const [refreshing, setRefreshing] = useState(false);
+	const [fee, setFee] = useState(0);
+	const [listPayment, setListPayment] = useState<BankType[]>([]);
+
+	useEffect(() => {
+		onRefresh();
+	}, []);
+
+	const onRefresh = () => {
+		setRefreshing(true);
+		Promise.all([
+			API.get(`${TABLE.ADMIN}/PAYMENT`).then(res => setFee(res?.price)),
+			API.get(`${TABLE.ADMIN}/ACCOUNT_BANK`, true).then(res => setListPayment(res)),
+		]).finally(() => setRefreshing(false));
+	};
 
 	const handlePayment = async () => {
 		if (image) {
@@ -51,20 +66,29 @@ const FeeService = (props: RootStackScreenProps<'FeeService'>) => {
 			<TouchableOpacity
 				onPress={() => setModal(true)}
 				style={{backgroundColor: 'red', borderRadius: 5, alignSelf: 'flex-end', padding: 5, marginHorizontal: 20}}>
-				<CustomText font={FONT_FAMILY.BOLD} text={'CHUYỂN TIỀN'} />
+				<CustomText color={colors.white} font={FONT_FAMILY.BOLD} text={'CHUYỂN TIỀN'} />
 			</TouchableOpacity>
-
-			<CustomText text={'Phí: 50.000 VND/Tháng'} style={{textAlign: 'center', paddingVertical: heightScale(10)}} />
-			<View style={{width: '100%', height: 1, backgroundColor: colors.black}} />
-
-			<CustomText font={FONT_FAMILY.BOLD} text={'NGÂN HÀNG'} style={{textAlign: 'center', paddingVertical: heightScale(10)}} />
-			<View style={{width: '100%', height: 1, backgroundColor: colors.black}} />
-			<View style={{marginLeft: widthScale(40)}}>
-				<CustomText text={'STK: 7475757'} style={{paddingVertical: heightScale(10)}} />
-				<CustomText text={'Ngân hàng: 7475757'} style={{paddingVertical: heightScale(10)}} />
-				<CustomText text={'Chủ thẻ: 7475757'} style={{paddingVertical: heightScale(10)}} />
-				<CustomText text={'Nội dung: 7475757'} style={{paddingVertical: heightScale(10)}} />
-			</View>
+			<ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+				<CustomText text={`Phí: ${formatNumber(fee)} VND/Tháng`} style={{textAlign: 'center', paddingVertical: heightScale(10)}} />
+				<View style={{width: '100%', height: 2, backgroundColor: colors.black}} />
+				{listPayment.map(item => (
+					<View key={generateRandomId()}>
+						<View style={{marginLeft: widthScale(40)}}>
+							{item.image ? (
+								<Image style={{width: widthScale(200), height: heightScale(250), resizeMode: 'contain'}} source={{uri: item.image}} />
+							) : (
+								<>
+									<CustomText text={'STK: ' + item.number} style={{paddingVertical: heightScale(10)}} />
+									<CustomText text={'Ngân hàng: ' + item.nameBank} style={{paddingVertical: heightScale(10)}} />
+									<CustomText text={'Chủ thẻ: ' + item.nameCard} style={{paddingVertical: heightScale(10)}} />
+									<CustomText text={'Nội dung: HoVaTen_SoDienThoai'} style={{paddingVertical: heightScale(10)}} />
+								</>
+							)}
+						</View>
+						<View style={{width: '100%', height: 1, backgroundColor: colors.black}} />
+					</View>
+				))}
+			</ScrollView>
 			<Modal
 				statusBarTranslucent
 				onDismiss={() => setModal(false)}

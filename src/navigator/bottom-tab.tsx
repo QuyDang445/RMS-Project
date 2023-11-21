@@ -7,7 +7,7 @@ import {Alert, AppState, DeviceEventEmitter, Image, Keyboard, StyleSheet, Toucha
 import {ICONS} from '../assets/image-paths';
 import FixedContainer from '../components/fixed-container';
 import {CHANNEL_ID, WIDTH} from '../constants/constants';
-import {EMIT_EVENT, TABLE, TYPE_USER} from '../constants/enum';
+import {ASYNC_STORAGE_KEY, EMIT_EVENT, TABLE, TYPE_USER} from '../constants/enum';
 import OrderAdmin from '../screens/admin/order-admin';
 import userAdmin from '../screens/admin/user-admin';
 import Home from '../screens/home';
@@ -18,7 +18,7 @@ import Order from '../screens/order';
 import OrderServicer from '../screens/order-servicer';
 import User from '../screens/user';
 import API from '../services/api';
-import {clearUserData} from '../stores/reducers/userReducer';
+import {clearUserData, updateUserInfo} from '../stores/reducers/userReducer';
 import {useAppDispatch, useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
@@ -28,6 +28,9 @@ import {ROUTE_KEY} from './routers';
 import {RootStackScreenProps} from './stacks';
 import database from '@react-native-firebase/database';
 import {UserProps} from '../constants/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {sleep} from '../utils/time';
+import {getServiceDetailFromID} from '../utils';
 
 const Tab = createBottomTabNavigator<RootStackScreensParams>();
 
@@ -96,6 +99,10 @@ const CusTomTabBar = memo((props: BottomTabBarProps) => {
 });
 
 const BottomTab = (props: RootStackScreenProps<'BottomTab'>) => {
+	const text = {
+		logoutAlert: 'Tài khoản của bạn đã bị chặn!',
+		logoutAlertReason: (reasonBlock: string) => `Lí do ${reasonBlock}`,
+	};
 	const {navigation} = props;
 	const dispatch = useAppDispatch();
 
@@ -146,11 +153,16 @@ const BottomTab = (props: RootStackScreenProps<'BottomTab'>) => {
 			if (type === EventType.PRESS) {
 			}
 		});
+
+		listenDynamicLink();
 	}, []);
 
 	const handleBlockUser = (user: UserProps) => {
 		if (user?.isBlocked) {
-			Alert.alert('Thông báo!', 'Tài khoản của bạn đã bị chặn!', [{text: 'OK', onPress: logout}]);
+			Alert.alert(text.logoutAlert, text.logoutAlertReason(user?.reasonBlock), [{text: 'OK', onPress: logout}]);
+		} else {
+			// update info
+			dispatch(updateUserInfo(user));
 		}
 	};
 
@@ -164,6 +176,16 @@ const BottomTab = (props: RootStackScreenProps<'BottomTab'>) => {
 		setTimeout(() => {
 			dispatch(clearUserData());
 		}, 600);
+	};
+
+	const listenDynamicLink = async () => {
+		await sleep(300);
+		const idService = await AsyncStorage.getItem(ASYNC_STORAGE_KEY.DYNAMIC_LINK_ID_SERVICE);
+		if (idService) {
+			const data = await getServiceDetailFromID(idService);
+			navigation.navigate(ROUTE_KEY.DetailService, {data: data});
+			AsyncStorage.removeItem(ASYNC_STORAGE_KEY.DYNAMIC_LINK_ID_SERVICE);
+		}
 	};
 
 	const HOME = useMemo(() => {

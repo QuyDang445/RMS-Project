@@ -24,19 +24,6 @@ const InfoDetailUser = (props: RootStackScreenProps<'InfoDetailUser'>) => {
 	const [reason, setReason] = useState<TYPE_BLOCK_SERVICER>();
 	const [reasonText, setReasonText] = useState('');
 
-	// const handleBlock = () => {
-	// 	AlertYesNo(undefined, 'Bạn chắc chắn muốn chặn user này?', async () => {
-	// 		// Spinner.show();
-	// 		// const userInfo = await API.get(`${TABLE.USERS}/${data.id}`);
-	// 		// API.put(`${TABLE.USERS}/${data.id}`, {...userInfo, isBlocked: true})
-	// 		// 	.then(() => {
-	// 		// 		showMessage('Chặn user thành công!');
-	// 		// 		navigation.goBack();
-	// 		// 	})
-	// 		// 	.finally(() => Spinner.hide());
-	// 	});
-	// };
-
 	const handleBlock = async () => {
 		if (!reasonText) {
 			return showMessage('Vui lòng nhập lí do!');

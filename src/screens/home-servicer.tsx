@@ -14,6 +14,7 @@ const Tab = createMaterialTopTabNavigator();
 
 const HomeServicer = (props: RootStackScreenProps<'Home'>) => {
 	const {navigation} = props;
+
 	const renderTapBarItem = useCallback(
 		(props: MaterialTopTabBarProps) => (
 			<View style={styles.viewTab}>

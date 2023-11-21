@@ -50,17 +50,8 @@ const RenderListService = (props: Props) => {
 
 	const onPressDetail = (item: OrderProps) => navigation.navigate(ROUTE_KEY.DetailOrder, {data: item});
 
-	// xác nhận đơn
-	const onPressConfirm = () => {};
-
-	// huỷ đơn
-	const onPressCancel = () => {};
-
-	// xong đơn
-	const onPressCompleted = () => {};
-
 	return (
-		<ScrollView contentContainerStyle={{flex: 1}} refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={refreshing} />}>
+		<ScrollView style={{flex: 1, backgroundColor: colors.white}} refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={refreshing} />}>
 			<FlatList
 				scrollEnabled={false}
 				contentContainerStyle={styles.view}

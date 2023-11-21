@@ -75,15 +75,15 @@ const OrderServicer = (props: RootStackScreenProps<'Order'>) => {
 						<TouchableOpacity
 							onPress={() => onPressDetail(item)}
 							style={{
-								padding: widthScale(10),
 								flexDirection: 'row',
 								marginBottom: widthScale(10),
 								borderRadius: 10,
 								borderWidth: 1,
 								borderColor: colors.gray,
+								overflow: 'hidden',
 							}}>
 							<Image style={styles.image} source={{uri: item.image}} />
-							<View style={{flex: 1, marginLeft: widthScale(10)}}>
+							<View style={{flex: 1, marginLeft: widthScale(10), padding: widthScale(10)}}>
 								<CustomText font={FONT_FAMILY.BOLD} text={item.name} />
 								<CustomText text={item?.categoryObject?.name} />
 								<Star star={item?.star || 0} />
@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
 	},
 	image: {
 		width: widthScale(150),
-		height: heightScale(100),
+		height: '100%',
 		borderRadius: 5,
 	},
 	icon: {

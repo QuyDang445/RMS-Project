@@ -22,7 +22,7 @@ const AllReview = (props: RootStackScreenProps<'AllReview'>) => {
 			total += allReview[i].star;
 		}
 
-		return total / allReview.length;
+		return total / (allReview.length || 1);
 	}, [allReview]);
 
 	useEffect(() => {

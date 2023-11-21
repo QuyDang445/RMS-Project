@@ -1,12 +1,14 @@
+import axios from 'axios';
 import React, {useEffect, useMemo, useState} from 'react';
-import {FlatList, Image, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {FlatList, Image, ScrollView, Share, StyleSheet, TouchableOpacity, View} from 'react-native';
+import {ICONS} from '../assets/image-paths';
 import CustomButton from '../components/custom-button';
 import CustomHeader from '../components/custom-header';
 import CustomText from '../components/custom-text';
 import FixedContainer from '../components/fixed-container';
 import Spinner from '../components/spinner';
 import Star from '../components/star';
-import {API_GET_INFO_COORDINATE, WIDTH} from '../constants/constants';
+import {API_GET_INFO_COORDINATE, APPLICATION_ID, WIDTH} from '../constants/constants';
 import {FONT_FAMILY, TABLE, TYPE_USER} from '../constants/enum';
 import {EvaluateProps, ServicerBlockUser, UserProps} from '../constants/types';
 import {ROUTE_KEY} from '../navigator/routers';
@@ -15,12 +17,12 @@ import API from '../services/api';
 import {useAppSelector} from '../stores/store/storeHooks';
 import {colors} from '../styles/colors';
 import {heightScale, widthScale} from '../styles/scaling-utils';
-import {generateRandomId, showMessage} from '../utils';
+import {generateRandomId, genLinkShare, showMessage} from '../utils';
 
 const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 	const {navigation, route} = props;
 
-	const data = route.params.data;
+	const data = route.params?.data;
 
 	const userInfo = useAppSelector(state => state.userInfoReducer.userInfo);
 
@@ -34,7 +36,7 @@ const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 			total += evaluates[i].star;
 		}
 
-		return total / evaluates.length || 0;
+		return total / (evaluates.length || 1);
 	}, [evaluates]);
 
 	useEffect(() => {
@@ -87,7 +89,28 @@ const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 
 	return (
 		<FixedContainer>
-			<CustomHeader title="CHI TIẾT DỊCH VỤ" />
+			<CustomHeader
+				title="CHI TIẾT DỊCH VỤ"
+				rightContent={
+					<TouchableOpacity
+						onPress={async () => {
+							Spinner.show();
+							const link = await genLinkShare(data.id);
+							console.log(link);
+
+							if (link) {
+								const message = `Hãy nhấn vào link để đặt hàng dịch vụ ${data.name}. Được chia sẻ bởi ${userInfo?.name}. Liên kết ${link}`;
+								const title = 'Chia sẻ dịch vụ';
+								Share.share({message: message, url: link, title: title});
+							} else {
+								showMessage('Có lỗi sảy ra!');
+							}
+							Spinner.hide();
+						}}>
+						<Image source={ICONS.share} style={{width: widthScale(25), height: widthScale(25)}} />
+					</TouchableOpacity>
+				}
+			/>
 			<ScrollView style={styles.view}>
 				<View style={styles.viewTop}>
 					<Image source={{uri: data?.image}} style={styles.image} />
@@ -143,7 +166,8 @@ const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 					})}
 					{!evaluates.length && <CustomText color={colors.grayLine} style={{textAlign: 'center'}} text={'Không có đánh giá nào'} />}
 				</View>
-				{userInfo?.type === TYPE_USER.USER && (
+
+				{/* {userInfo?.type === TYPE_USER.USER && (
 					<View style={{marginVertical: heightScale(20)}}>
 						<CustomText text={'Gợi ý cho bạn'} font={FONT_FAMILY.BOLD} />
 
@@ -170,10 +194,17 @@ const DetailService = (props: RootStackScreenProps<'DetailService'>) => {
 							data={servicer}
 						/>
 					</View>
-				)}
+				)} */}
 			</ScrollView>
 			{userInfo?.type === TYPE_USER.USER && (
-				<View style={{flexDirection: 'row', justifyContent: 'center', paddingVertical: heightScale(10)}}>
+				<View
+					style={{
+						flexDirection: 'row',
+						justifyContent: 'center',
+						paddingVertical: heightScale(10),
+						borderTopColor: colors.grayLine,
+						borderTopWidth: 1,
+					}}>
 					<CustomButton style={{width: WIDTH / 2.5}} text="THÔNG TIN THỢ" onPress={onPressViewInfoServicer} />
 					<View style={{width: widthScale(15)}} />
 					<CustomButton style={{width: WIDTH / 2.5}} text="ĐẶT LỊCH" onPress={onPressBooking} />
